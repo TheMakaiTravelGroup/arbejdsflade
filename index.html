@@ -395,8 +395,7 @@ function vpFinanceCards(){
 async function init(){
   const { data } = await db.auth.getSession();
   session = data.session;
-  db.auth.onAuthStateChange((e,s)=>{ if(e==='PASSWORD_RECOVERY'){ session=s; showReset(); return; } const had=!!session; session=s; if(had!==!!s) render(); });
-  if(/type=recovery/.test(location.hash)){ showReset(); return; }
+  db.auth.onAuthStateChange((e,s)=>{ if(e==='PASSWORD_RECOVERY') window.__recovery=true; const had=!!session; session=s; if(had!==!!s || e==='PASSWORD_RECOVERY') render(); });
   render();
 }
 function render(){ session ? showApp() : showLogin(); }
@@ -440,40 +439,46 @@ function showLogin(){
     msg(error?error.message:'Vi har sendt et link til '+c.email+'. Åbn mailen og vælg et nyt kodeord (tjek evt. spam-mappen).',!error);
   });
 }
-function showReset(){
-  $('#sidebar').style.display='none';
-  app.innerHTML = `<div class="card" id="login">
-    <div class="center" style="margin-bottom:16px">
-      <div class="pf" style="letter-spacing:9px;font-size:21px;color:var(--forest);font-weight:500">MALDIVIA</div>
-      <div style="font-size:8.5px;letter-spacing:3.5px;color:var(--gold);text-transform:uppercase;margin-top:4px;font-weight:700">Vælg nyt kodeord</div></div>
-    <form id="resetform">
-      <label for="np">Nyt kodeord</label><input id="np" name="np" type="password" autocomplete="new-password" required minlength="6">
-      <label for="np2">Gentag nyt kodeord</label><input id="np2" name="np2" type="password" autocomplete="new-password" required minlength="6">
-      <div style="margin-top:15px" class="row"><button class="btn" type="submit">Gem nyt kodeord</button></div>
-    </form>
-    <div class="err" id="autherr"></div>
-    <p class="muted">Vælg et kodeord på mindst 6 tegn.</p></div>`;
-  const msg=(t,ok)=>{const e=$('#autherr');e.className=ok?'err ok':'err';e.textContent=t;};
-  document.getElementById('resetform').addEventListener('submit', async ev=>{
-    ev.preventDefault();
-    const p1=$('#np').value, p2=$('#np2').value;
-    if(p1.length<6) return msg('Kodeordet skal være mindst 6 tegn.');
-    if(p1!==p2) return msg('De to kodeord er ikke ens.');
-    msg('Gemmer…',true);
+function changePassword(){
+  if(document.getElementById('cpoverlay')) return;
+  const ov=document.createElement('div');
+  ov.id='cpoverlay';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(34,48,31,.35);display:flex;align-items:center;justify-content:center;z-index:9999';
+  ov.innerHTML=`<div class="card" style="width:360px;max-width:92vw;margin:0">
+    <h3 style="margin-top:0">Skift kodeord</h3>
+    <label for="cpw1">Nyt kodeord</label><input id="cpw1" type="password" autocomplete="new-password" minlength="6">
+    <label for="cpw2">Gentag nyt kodeord</label><input id="cpw2" type="password" autocomplete="new-password" minlength="6">
+    <div class="err" id="cperr" style="margin-top:8px"></div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn" id="cpsave" type="button">Gem</button>
+      <button class="btn ghost" id="cpcancel" type="button">Annullér</button>
+    </div>
+    <p class="muted" style="margin-bottom:0">Mindst 6 tegn.</p></div>`;
+  document.body.appendChild(ov);
+  const err=(t,ok)=>{const e=ov.querySelector('#cperr');e.className=ok?'err ok':'err';e.textContent=t;};
+  const close=()=>ov.remove();
+  ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
+  ov.querySelector('#cpcancel').onclick=close;
+  ov.querySelector('#cpw1').focus();
+  ov.querySelector('#cpsave').onclick=async()=>{
+    const p1=ov.querySelector('#cpw1').value, p2=ov.querySelector('#cpw2').value;
+    if(p1.length<6) return err('Kodeordet skal være mindst 6 tegn.');
+    if(p1!==p2) return err('De to kodeord er ikke ens.');
+    err('Gemmer…',true);
     const {error}=await db.auth.updateUser({password:p1});
-    if(error) return msg(error.message);
-    msg('Kodeord opdateret — du er nu logget ind.',true);
-    history.replaceState(null,'',location.pathname);
-    render();
-  });
+    if(error) return err(error.message);
+    err('Kodeord ændret ✓ — brug det næste gang du logger ind.',true);
+    setTimeout(close,1600);
+  };
 }
 async function showApp(){
   $('#sidebar').style.display='';
   const email = session.user.email;
   const { data: tm } = await db.from('team_members').select('name, initials').eq('email', email).maybeSingle();
   window.ME = tm?tm.initials:null; window.MYNAME = tm?tm.name.split(' ')[0]:email;
-  $('#who').innerHTML = (tm?tm.name:email) + '<br><a href="#" onclick="db.auth.signOut();return false">Log ud</a>';
+  $('#who').innerHTML = (tm?tm.name:email) + '<br><a href="#" onclick="changePassword();return false">Skift kodeord</a> · <a href="#" onclick="db.auth.signOut();return false">Log ud</a>';
   viewDash();
+  if(window.__recovery){ window.__recovery=false; setTimeout(changePassword, 500); }
 }
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{navTo(b.dataset.v);({dash:viewDash,sales:viewSales,finance:viewFinance,marketing:viewMarketing,reports:viewReports,new:viewNew})[b.dataset.v]();});
 function navTo(v){document.querySelectorAll('#nav button').forEach(x=>x.classList.toggle('on',x.dataset.v===v));}
