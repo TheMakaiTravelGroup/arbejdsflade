@@ -1,0 +1,1605 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maldivia · Arbejdsflade</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f7f4ee;--card:#fffefb;--line:#e9e3d6;--line-2:#f1ecdf;--ink:#2e332e;--mut:#98937f;--forest:#22301f;--gold:#b99a5f;--sea:#7ba7a0;--bad:#c2653f;--ok:#6f9c7c;--blue:#7d9cb5;}
+*{box-sizing:border-box;}
+body{font-family:'Inter',ui-sans-serif,system-ui,sans-serif;margin:0;background:var(--bg);color:var(--ink);font-size:13px;display:flex;min-height:100vh;}
+.pf{font-family:'Playfair Display',Georgia,serif;}
+aside{width:196px;background:var(--card);border-right:1px solid var(--line);padding:28px 0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;flex-shrink:0;}
+aside .logo{text-align:center;margin-bottom:30px;}
+aside .logo h1{font-family:'Playfair Display',serif;font-size:18px;letter-spacing:7px;margin:0 0 3px;font-weight:500;text-indent:7px;color:var(--forest);}
+aside .logo small{font-size:8px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;font-weight:600;}
+aside nav{display:flex;flex-direction:column;margin-top:4px;}
+aside nav button{background:none;border:0;color:var(--mut);text-align:left;padding:12px 28px;font-size:12.5px;cursor:pointer;border-left:2px solid transparent;font-family:'Inter',sans-serif;font-weight:500;}
+aside nav button:hover{color:var(--forest);}
+aside nav button.on{color:var(--forest);border-left-color:var(--gold);background:#faf7f0;font-weight:600;}
+aside .foot{margin-top:auto;padding:16px 28px;font-size:10.5px;color:var(--mut);line-height:1.7;}
+aside .foot a{color:var(--gold);text-decoration:none;}
+main{flex:1;padding:26px 32px;max-width:1280px;}
+.pagehead{display:flex;align-items:baseline;gap:14px;margin-bottom:18px;flex-wrap:wrap;}
+.pagehead h2{font-family:'Playfair Display',serif;font-size:27px;font-weight:500;margin:0;color:var(--forest);}
+.pagehead .sub{color:var(--mut);font-size:12px;font-style:italic;font-family:'Playfair Display',serif;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(120,105,75,.04);}
+.card h3{font-size:9.5px;letter-spacing:2.2px;text-transform:uppercase;color:var(--mut);margin:0 0 12px;font-weight:700;display:flex;align-items:baseline;gap:8px;}
+.card h3 .r{margin-left:auto;font-weight:500;letter-spacing:0;text-transform:none;font-size:11px;}
+.grid{display:grid;gap:12px;}
+.g2{grid-template-columns:1.55fr 1fr;} .g3{grid-template-columns:repeat(3,1fr);} .g4{grid-template-columns:repeat(4,1fr);} .g6{grid-template-columns:repeat(6,1fr);}
+@media(max-width:1000px){.g2,.g3,.g4,.g6{grid-template-columns:repeat(2,1fr);}}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;position:relative;}
+.kpi b{font-family:'Playfair Display',serif;font-size:24px;font-weight:500;display:block;line-height:1.1;color:var(--forest);font-variant-numeric:tabular-nums;}
+.kpi span{font-size:9px;color:var(--mut);letter-spacing:1.2px;text-transform:uppercase;font-weight:600;}
+.kpi .delta{position:absolute;top:11px;right:13px;font-size:10.5px;font-weight:700;}
+.delta.up{color:var(--ok);} .delta.down{color:var(--bad);} .delta.flat{color:var(--mut);}
+.kpi.warn b{color:var(--bad);}
+.kpi .delta{bottom:12px;top:auto;}
+.agent{position:relative;}
+.tip{position:absolute;top:9px;right:10px;width:15px;height:15px;border-radius:50%;border:1px solid var(--line);color:var(--mut);font-size:9.5px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;cursor:help;font-family:'Inter',sans-serif;background:var(--card);z-index:2;}
+.tip:hover{background:var(--gold);color:#fff;border-color:var(--gold);}
+.tipbox{position:absolute;z-index:60;top:28px;right:6px;width:225px;background:var(--forest);color:#f4efe4;padding:10px 12px;border-radius:9px;font-size:11.5px;line-height:1.55;letter-spacing:0;text-transform:none;font-weight:400;box-shadow:0 8px 24px rgba(34,48,31,.22);opacity:0;visibility:hidden;transform:translateY(-3px);transition:opacity .12s,transform .12s;pointer-events:none;}
+.tip:hover + .tipbox{opacity:1;visibility:visible;transform:translateY(0);}
+.tipbox b{color:var(--gold);font-weight:600;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+th{text-align:left;color:var(--mut);font-size:9px;text-transform:uppercase;letter-spacing:1.4px;padding:5px 7px;border-bottom:1px solid var(--line);font-weight:700;}
+th.r,td.r{text-align:right;}
+td{padding:7px;border-bottom:1px solid var(--line-2);font-variant-numeric:tabular-nums;}
+tr.click{cursor:pointer;} tr.click:hover td{background:#faf6ec;}
+.badge{font-size:8.5px;font-weight:700;border-radius:4px;padding:2.5px 8px;color:#fff;background:var(--ok);white-space:nowrap;letter-spacing:1px;text-transform:uppercase;}
+.badge.bekraeftet{background:#a8a28c;} .badge.bb_sendt{background:var(--gold);} .badge.klar_til_afrejse{background:var(--blue);}
+.badge.god_tur{background:var(--sea);} .badge.faerdig{background:#5b6157;} .badge.canx,.badge.voided{background:var(--bad);}
+input,select,textarea{font:inherit;border:1px solid var(--line);border-radius:7px;padding:8px 11px;width:100%;background:#fff;color:var(--ink);}
+input:focus,select:focus,textarea:focus{outline:2px solid #eadfc6;border-color:var(--gold);}
+label{font-size:9px;text-transform:uppercase;letter-spacing:1.4px;color:var(--mut);display:block;margin:10px 0 4px;font-weight:700;}
+.row{display:flex;gap:11px;} .row>div{flex:1;}
+button.btn{background:var(--forest);color:#f7f4ee;border:0;border-radius:7px;padding:10px 18px;cursor:pointer;font-size:11px;letter-spacing:1.6px;text-transform:uppercase;font-weight:600;font-family:'Inter',sans-serif;}
+button.btn:hover{background:#31432c;}
+button.btn.gold{background:var(--gold);} button.btn.gold:hover{background:#a3874e;}
+button.btn.ghost{background:#fff;color:var(--forest);border:1px solid var(--line);} button.btn.ghost:hover{border-color:var(--gold);color:var(--gold);}
+button.btn.danger{background:var(--bad);}
+.pill{display:inline-block;border:1px solid var(--line);border-radius:6px;padding:3px 11px;font-size:11.5px;margin:2px 5px 2px 0;background:#fff;}
+.muted{color:var(--mut);font-size:11.5px;}
+#login{max-width:390px;margin:11vh auto;}
+.center{text-align:center;}
+.err{color:var(--bad);font-size:12px;margin-top:8px;min-height:15px;}
+.ok{color:var(--ok);}
+dialog{border:1px solid var(--line);border-radius:12px;padding:24px 28px;max-width:740px;width:94%;background:var(--card);color:var(--ink);}
+dialog::backdrop{background:rgba(46,51,46,.4);}
+.el-item{border:1px solid var(--line);border-radius:8px;padding:12px 15px;margin-bottom:8px;background:#fff;}
+.el-item b{font-size:13px;color:var(--forest);}
+.list-item{display:flex;gap:9px;padding:7.5px 2px;border-bottom:1px solid var(--line-2);align-items:baseline;cursor:pointer;}
+.list-item:last-child{border-bottom:none;}
+.list-item:hover{background:#faf6ec;}
+.list-item .ic{flex:0 0 14px;text-align:center;color:var(--gold);font-size:9px;}
+.list-item .when{margin-left:auto;font-size:10.5px;color:var(--mut);white-space:nowrap;font-variant-numeric:tabular-nums;}
+.news .item{display:flex;gap:12px;padding:9px 2px;border-bottom:1px solid var(--line-2);align-items:baseline;}
+.news .item:last-child{border-bottom:none;}
+.news .num{font-family:'Playfair Display',serif;font-size:19px;color:var(--gold);min-width:20px;line-height:1;}
+.news a.hl{font-family:'Playfair Display',serif;font-size:14.5px;color:var(--forest);text-decoration:none;font-weight:600;}
+.news a.hl:hover{color:var(--gold);}
+.news p{margin:2px 0 0;font-size:11.5px;color:#6d6a5c;line-height:1.45;}
+.news .src{font-size:8.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--gold);font-weight:700;}
+/* ── Morgenbrief (v0.4 · rene menupunkter) ── */
+.brief-lead{font-size:12px;line-height:1.55;color:var(--mut);margin:0 0 14px;}
+.brief-lead a{font-weight:600;white-space:nowrap;}
+.brief-sec{margin-bottom:13px;}
+.brief-sec:last-child{margin-bottom:0;}
+.brief-sec-h{font-size:9px;letter-spacing:1.8px;text-transform:uppercase;color:var(--mut);font-weight:700;margin:0 0 3px;display:flex;align-items:baseline;gap:7px;}
+.brief-sec-h .n{color:var(--gold);font-weight:700;}
+.brief-item{display:flex;gap:10px;padding:6.5px 2px;border-bottom:1px solid var(--line-2);align-items:baseline;font-size:12.5px;line-height:1.45;}
+.brief-item:last-child{border-bottom:none;}
+.brief-item.click{cursor:pointer;}
+.brief-item.click:hover{background:#faf6ec;}
+.brief-item .ic{color:var(--gold);flex:0 0 13px;text-align:center;font-size:10px;}
+.brief-item .tx{flex:1;}
+.brief-item .when{margin-left:auto;font-size:10.5px;color:var(--mut);white-space:nowrap;font-variant-numeric:tabular-nums;padding-left:8px;}
+.brief-rev{display:flex;align-items:baseline;gap:9px;padding:8px 2px 2px;}
+.brief-rev b{font-family:'Playfair Display',serif;font-size:18px;font-weight:600;color:var(--forest);font-variant-numeric:tabular-nums;}
+.brief-more{font-size:11.5px;color:var(--mut);margin:4px 0 0;}
+.brief-empty{font-size:11.5px;color:var(--mut);margin:0;}
+/* ── Flyfakturaer (foldbar boks · Billetkontoret) ── */
+.finvbox{border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:6px 0 18px;}
+.finv{border-top:1px solid var(--line);}
+.finv:first-child{border-top:none;}
+.finv>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:9px;padding:10px 13px;font-size:12px;}
+.finv>summary:hover{background:var(--bg);}
+.finv>summary::-webkit-details-marker{display:none;}
+.finv>summary::before{content:'▸';color:var(--gold);font-size:10px;flex:none;}
+.finv[open]>summary::before{content:'▾';}
+.finv>summary .fitot{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums;padding-left:12px;}
+.finv .finbody{padding:2px 13px 12px 34px;}
+.finv-total{display:flex;padding:10px 13px;font-size:12px;font-weight:700;background:var(--bg);border-top:1px solid var(--line);}
+.agent{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 14px;}
+.agent .nm{font-size:8.5px;letter-spacing:1.6px;text-transform:uppercase;color:var(--mut);font-weight:700;}
+.agent .st{font-family:'Playfair Display',serif;font-size:15px;margin:4px 0 1px;color:var(--forest);font-weight:600;}
+.agent .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;}
+.dot.ok{background:var(--ok);} .dot.warn{background:var(--gold);} .dot.alarm{background:var(--bad);} .dot.off{background:#cfc9b8;}
+.agent .info{font-size:10.5px;color:var(--mut);}
+.task-line{display:flex;gap:9px;align-items:center;padding:6.5px 0;border-bottom:1px solid var(--line-2);}
+.task-line:last-child{border-bottom:none;}
+.task-line input[type=checkbox]{width:14px;height:14px;accent-color:var(--forest);}
+.task-line .tt{flex:1;cursor:pointer;} .task-line .tt:hover{color:var(--gold);}
+.overdue{color:var(--bad);font-weight:700;}
+.bar{height:7px;border-radius:4px;background:var(--line-2);overflow:hidden;min-width:50px;}
+.bar i{display:block;height:100%;background:var(--gold);border-radius:4px;}
+.bar i.sea{background:var(--sea);} .bar i.forest{background:#5b7a54;}
+.mini{font-size:10.5px;color:var(--mut);}
+a{color:var(--gold);}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;margin-left:auto;}
+.seg button{background:#fff;border:0;padding:5px 12px;font-size:11px;cursor:pointer;color:var(--mut);font-family:inherit;}
+.seg button.on{background:var(--forest);color:#fff;}
+.inuse-row{display:flex;gap:14px;padding:9px 3px;border-bottom:1px solid var(--line-2);align-items:baseline;}
+.inuse-row:last-child{border-bottom:none;}
+.inuse-row.shared{background:#faf6ec;border:1px solid #ecdfbf;border-radius:8px;padding:9px 11px;margin-bottom:4px;}
+.inuse .il{flex:0 0 42%;display:flex;gap:7px;align-items:baseline;flex-wrap:wrap;}
+.inuse .il b{color:var(--forest);font-size:13px;}
+.inuse .ir{flex:1;display:flex;flex-direction:column;gap:2px;}
+.inuse a.cust{text-decoration:none;color:var(--ink);font-size:12px;}
+.inuse a.cust:hover{color:var(--gold);}
+.eltag{font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;border-radius:4px;padding:2px 6px;color:#fff;background:#a8a28c;white-space:nowrap;}
+.eltag.t-hotel{background:var(--sea);} .eltag.t-flight{background:var(--blue);} .eltag.t-transfer{background:var(--gold);} .eltag.t-ticket{background:#8a7bb0;}
+.sharedbadge{font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8a6d2f;border:1px solid var(--gold);border-radius:4px;padding:2px 6px;background:#fff;}
+.vpsel{padding:4px 6px;font-size:11px;width:auto;min-width:140px;border-radius:6px;}
+.vpsel.vp-aaben{border-color:var(--line);color:var(--mut);} 
+.vpsel.vp-betalt_mangler_afstemning{border-color:var(--gold);color:#8a6d2f;background:#fffdf6;font-weight:600;}
+.vpsel.vp-afstemt{border-color:var(--ok);color:var(--ok);background:#f4f9f5;font-weight:600;}
+/* ── Rapporter ── */
+.rep-layout{display:grid;grid-template-columns:212px 1fr;gap:16px;align-items:start;}
+.rep-menu{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px;position:sticky;top:16px;}
+.rep-grp{font-size:9.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--mut);padding:12px 10px 5px;}
+.rep-item{display:block;width:100%;text-align:left;background:none;border:0;padding:8px 10px;border-radius:7px;font:inherit;font-size:12px;color:var(--ink);cursor:pointer;}
+.rep-item:hover{background:#faf7f0;}
+.rep-item.on{background:var(--forest);color:#fff;font-weight:600;}
+.rep-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:12px;}
+.rep-toolbar label{display:block;font-size:10px;color:var(--mut);margin-bottom:2px;}
+.rep-toolbar input,.rep-toolbar select{font:inherit;font-size:12px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;}
+.exp-btns{margin-left:auto;display:flex;gap:6px;}
+.exp-btns .btn{padding:7px 12px;font-size:11.5px;}
+.rep-meta{font-size:11px;color:var(--mut);margin:2px 0 10px;}
+table.rep td.num,table.rep th.num{text-align:right;font-variant-numeric:tabular-nums;}
+table.rep tfoot td{border-top:2px solid var(--line);font-weight:700;}
+.print-only{display:none;}
+@media print{
+  body>aside,.rep-menu,.rep-toolbar,#printhint{display:none!important;}
+  body{display:block;background:#fff;}
+  main#app{padding:0!important;}
+  .rep-layout{display:block;}
+  .card{border:0;box-shadow:none;padding:0;}
+  table.rep{font-size:10px;width:100%;}
+  .print-only{display:block!important;}
+}
+</style>
+</head>
+<body>
+<aside id="sidebar" style="display:none">
+  <div class="logo"><h1>MALDIVIA</h1><small>Travel Design · OS</small></div>
+  <nav id="nav">
+    <button data-v="dash" class="on">Dashboard</button>
+    <button data-v="sales">Salg</button>
+    <button data-v="finance">Økonomi</button>
+    <button data-v="marketing">Markedsføring</button>
+    <button data-v="reports">Rapporter</button>
+    <button data-v="new">＋ Ny rejse</button>
+  </nav>
+  <div class="foot" id="who"></div>
+</aside>
+<main id="app"></main>
+
+<script>
+const SB_URL = 'https://kottwokudnxdobittera.supabase.co';
+const SB_KEY = 'sb_publishable_MOojN3I5klYYmhgWq2NWGw_ZHV78zGO';
+const db = supabase.createClient(SB_URL, SB_KEY);
+const $ = s => document.querySelector(s);
+const app = $('#app');
+const STATUS_LABELS = {bekraeftet:'Bekræftet', bb_sendt:'BB sendt', klar_til_afrejse:'Klar til afrejse', god_tur:'God tur', faerdig:'Færdig', canx:'Afbestilt', voided:'Void'};
+const FLOW = ['bekraeftet','bb_sendt','klar_til_afrejse','god_tur','faerdig'];
+const EL_TYPES = {flight:'Fly', ticket:'Billet', hotel:'Hotel', transfer:'Transfer', other:'Andet', fee:'Gebyr', insurance:'Forsikring'};
+const SALES_TASKS = ['tjek_rejse','pre_departure','god_tur','hjemkomst','retrieval'];
+const FIN_TASKS = ['restbetaling','leverandoerbetaling','kreditvarsel','dok_sync'];
+const FIELD_DEFS = {
+  flight: [['airline','Flyselskab','text','Qatar Airways'],['flight_no','Flynr.','text','QR176'],['dep','Fra (IATA)','text','OSL'],['arr','Til (IATA)','text','DOH'],['dep_time','Afgang kl. (lokal)','time',''],['arr_time','Ankomst kl. (lokal)','time',''],['arr_plus_days','Ankomst +dage','number','0'],['class','Kabineklasse','text','Economy'],['seats','Antal sæder','number','3'],['pnr','PNR','text','HBK17N'],['airline_ref','Flyselskabets ref.','text','XZDTK4'],['operated_by','Opereres af','text',''],['dep_terminal','Afgangsterminal','text',''],['arr_terminal','Ankomstterminal','text',''],['flight_time','Flyvetid','text','6t 30m'],['baggage','Bagage','text','2×23 kg + håndbagage'],['stops','Stop','text','Direkte'],['notes','Bemærkninger','textarea','']],
+  ticket: [['ticket_type','Billettype','text','ETK'],['ticket_no','Billetnr.','text',''],['validating_airline','Validating airline','text',''],['issue_date','Udstedt dato','date',''],['fare','Fare (kostpris)','number',''],['taxes','Skatter/afgifter','number',''],['handling_fee','Handling fee','number',''],['other_fees','Øvrige gebyrer','number',''],['pax_names','Gælder passagerer','text','Alle / navne'],['notes','Bemærkninger','textarea','']],
+  hotel: [['room','Villa-/værelsestype','text','Beach Villa with Pool'],['board','Meal plan','text','Crystal All-Inclusive'],['rooms','Antal villaer/værelser','number','1'],['adults','Voksne','number',''],['children','Børn','number',''],['conf_no','Reservationsnr.','text',''],['checkin_time','Indtjekning fra kl.','time',''],['address','Adresse/atol','text',''],['website','Hjemmeside','text',''],['special_requests','Special requests (VIP, villa-placering …)','textarea',''],['notes','Interne bemærkninger','textarea','']],
+  transfer: [['mode','Transfertype','text','Domestic flight + speedboat / sjøfly / bil'],['company','Selskab','text','Maldivian'],['from','Fra','text','Malé Velana (MLE)'],['to','Til','text','Ayada Maldives'],['dep_time','Afgang kl.','time',''],['arr_time','Ankomst kl.','time',''],['duration','Varighed','text',''],['conf_no','Reservationsnr.','text',''],['luggage_info','Bagageinfo','text',''],['notes','Bemærkninger','textarea','']],
+  other: [['category','Kategori','text','Udflugt / golf / gavekort / …'],['from','Fra/sted','text',''],['to','Til','text',''],['start_time','Tidspunkt','time',''],['conf_no','Reservationsnr.','text',''],['notes','Bemærkninger','textarea','']],
+  insurance: [['policy_no','Policenr.','text',''],['coverage','Dækning','text',''],['pax_covered','Dækkede rejsende','text','Alle'],['notes','Bemærkninger','textarea','']],
+  fee: [['fee_type','Gebyrtype','text',''],['notes','Bemærkninger','textarea','']]
+};
+const DETAIL_LABELS = Object.fromEntries(Object.values(FIELD_DEFS).flat().map(f => [f[0], f[1]]));
+DETAIL_LABELS.board='Meal plan'; DETAIL_LABELS.nights='Nætter'; DETAIL_LABELS.direct='Direkte'; DETAIL_LABELS.ref='Reference'; DETAIL_LABELS.company='Selskab';
+let session = null;
+const fmtD = s => s ? new Date(s).toLocaleDateString('da-DK',{day:'numeric',month:'short'}) : '—';
+const fmtDY = s => s ? new Date(s).toLocaleDateString('da-DK',{day:'numeric',month:'short',year:'2-digit'}) : '—';
+const today = () => new Date().toISOString().slice(0,10);
+const plusDays = n => new Date(Date.now()+n*86400000).toISOString().slice(0,10);
+const kr = n => Math.round((n||0)/1000).toLocaleString('da-DK') + ' t.kr.';
+const pct = (a,b) => b ? (100*a/b).toFixed(1).replace('.',',') + ' %' : '—';
+const MDR = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+
+// ═══ LEVERANDØRBETALINGER · Dolphin "Vendor Payments Due" (importeret 13. jul 2026) ═══
+const VP_META={report_date:'2026-07-13',source:'Vendor Payments Due Report (Dolphin)',grand_total_dkk:5990005.12};
+const VENDOR_PAYMENTS=[
+{"branch": "MD", "folder": "2020", "dep": "2026-02-05", "pax": "CARL KNOWLES GJELSTRUP", "product": "Hotel", "due": "2026-01-06", "vendorAmt": -5110.41, "cur": "USD", "dkk": -34750.79, "vendor": "Meyyafushi Maldives (5*)"},
+{"branch": "MD", "folder": "1987", "dep": "2026-01-29", "pax": "ANNE-MARIE HYLDAL JUNG", "product": "Hotel", "due": "2026-01-16", "vendorAmt": -5708.8, "cur": "USD", "dkk": -41103.36, "vendor": "Ananea Madivaru (5*)"},
+{"branch": "MN", "folder": "1675", "dep": "2026-03-28", "pax": "HEGE BYBERG KLINGSHEIM", "product": "Hotel", "due": "2026-02-27", "vendorAmt": -9204.0, "cur": "USD", "dkk": -62587.2, "vendor": "Meyyafushi Maldives (5*)"},
+{"branch": "MN", "folder": "1689", "dep": "2026-03-27", "pax": "GUNN ERTRESVAAG", "product": "Hotel", "due": "2026-02-28", "vendorAmt": -17644.0, "cur": "USD", "dkk": -127036.8, "vendor": "Meyyafushi Maldives (5*)"},
+{"branch": "MD", "folder": "2062", "dep": "2026-03-11", "pax": "OLE SCHOU", "product": "Hotel", "due": "2026-03-11", "vendorAmt": -906.48, "cur": "EUR", "dkk": -6843.93, "vendor": "Stuba"},
+{"branch": "NO", "folder": "2751", "dep": "2026-03-14", "pax": "Solveig Hovde", "product": "Transfer", "due": "2026-03-21", "vendorAmt": 22.0, "cur": "USD", "dkk": 158.4, "vendor": "Hoppa"},
+{"branch": "MD", "folder": "2037", "dep": "2026-03-22", "pax": "MIKE JONASSEN", "product": "Transfer", "due": "2026-03-23", "vendorAmt": 220.0, "cur": "EUR", "dkk": 1661.0, "vendor": "Emotions DMC"},
+{"branch": "NO", "folder": "2751", "dep": "2026-03-14", "pax": "Solveig Hovde", "product": "Transfer", "due": "2026-03-28", "vendorAmt": 22.0, "cur": "USD", "dkk": 158.4, "vendor": "Hoppa"},
+{"branch": "MD", "folder": "2047", "dep": "2026-04-07", "pax": "ANNE-MARIE HYLDAL JUNG", "product": "Hotel", "due": "2026-04-08", "vendorAmt": 5708.8, "cur": "USD", "dkk": 38819.84, "vendor": "Ananea Madivaru (5*)"},
+{"branch": "MD", "folder": "2050", "dep": "2026-04-11", "pax": "Dennis Mikkelsen", "product": "Hotel", "due": "2026-04-25", "vendorAmt": 2894.26, "cur": "EUR", "dkk": 21851.66, "vendor": "TBO Holidays"},
+{"branch": "MN", "folder": "1705", "dep": "2026-06-01", "pax": "Fredrik Sebastian Scuderi", "product": "Hotel", "due": "2026-06-05", "vendorAmt": 562.65, "cur": "EUR", "dkk": 4248.01, "vendor": "TBO Holidays"},
+{"branch": "MD", "folder": "2049", "dep": "2026-07-05", "pax": "Henrik Svenstrup", "product": "Hotel", "due": "2026-06-09", "vendorAmt": 8737.52, "cur": "USD", "dkk": 59415.14, "vendor": "Hummingbird Travel"},
+{"branch": "MN", "folder": "1711", "dep": "2026-06-25", "pax": "Stian Bentzen", "product": "Hotel", "due": "2026-06-12", "vendorAmt": 7931.21, "cur": "EUR", "dkk": 59880.64, "vendor": "Yalago"},
+{"branch": "MN", "folder": "1736", "dep": "2026-07-15", "pax": "Jarle Trælvik Breien", "product": "Hotel", "due": "2026-06-16", "vendorAmt": 15515.0, "cur": "USD", "dkk": 105502.0, "vendor": "Emerald Maldives (5*)"},
+{"branch": "MN", "folder": "1737", "dep": "2026-07-15", "pax": "Thorbjørn Ruud", "product": "Hotel", "due": "2026-06-16", "vendorAmt": 11197.5, "cur": "USD", "dkk": 76143.0, "vendor": "Emerald Maldives (5*)"},
+{"branch": "MD", "folder": "2066", "dep": "2026-07-01", "pax": "Mette-Marie Langelund Bødker", "product": "Hotel", "due": "2026-06-18", "vendorAmt": 4574.99, "cur": "EUR", "dkk": 34541.17, "vendor": "Yalago"},
+{"branch": "MD", "folder": "2054", "dep": "2026-07-03", "pax": "Søren Karas", "product": "Hotel", "due": "2026-06-20", "vendorAmt": 21060.0, "cur": "USD", "dkk": 138996.0, "vendor": "Meyyafushi Maldives (5*)"},
+{"branch": "MD", "folder": "2038", "dep": "2026-07-06", "pax": "HENRIK SORTH", "product": "Hotel", "due": "2026-06-30", "vendorAmt": 24078.0, "cur": "USD", "dkk": 155303.1, "vendor": "Ayada Maldives (5*)"},
+{"branch": "MN", "folder": "1693", "dep": "2026-07-30", "pax": "Line Taylor Hammer", "product": "Hotel", "due": "2026-07-01", "vendorAmt": 5140.0, "cur": "USD", "dkk": 37008.0, "vendor": "Diamonds Thudufushi (4+*)"},
+{"branch": "MD", "folder": "2049", "dep": "2026-07-05", "pax": "Henrik Svenstrup", "product": "Hotel", "due": "2026-07-01", "vendorAmt": 949.68, "cur": "EUR", "dkk": 7170.08, "vendor": "TBO Holidays"},
+{"branch": "MN", "folder": "1694", "dep": "2026-07-14", "pax": "Giske Brudvik Sørensen", "product": "Hotel", "due": "2026-07-01", "vendorAmt": 19572.0, "cur": "USD", "dkk": 140918.4, "vendor": "Ananea Madivaru (5*)"},
+{"branch": "MN", "folder": "1660", "dep": "2026-07-15", "pax": "Finn André Smeby Schackt", "product": "Hotel", "due": "2026-07-02", "vendorAmt": 9502.8, "cur": "USD", "dkk": 68420.16, "vendor": "Ananea Madivaru (5*)"},
+{"branch": "MN", "folder": "1745", "dep": "2026-07-11", "pax": "Cecilie Tessem Bakken", "product": "Hotel", "due": "2026-07-03", "vendorAmt": 11410.0, "cur": "USD", "dkk": 77588.0, "vendor": "Ayada Maldives (5*)"},
+{"branch": "MD", "folder": "2049", "dep": "2026-07-05", "pax": "Henrik Svenstrup", "product": "Transfer", "due": "2026-07-05", "vendorAmt": 116.38, "cur": "EUR", "dkk": 878.67, "vendor": "Transfeero"},
+{"branch": "MD", "folder": "2044", "dep": "2026-07-06", "pax": "Christian Nybo Ploug", "product": "Hotel", "due": "2026-07-06", "vendorAmt": 2638.07, "cur": "EUR", "dkk": 19917.43, "vendor": "Yalago"},
+{"branch": "MD", "folder": "2042", "dep": "2026-07-19", "pax": "Vibeke Schmeisser", "product": "Hotel", "due": "2026-07-06", "vendorAmt": 7676.4, "cur": "USD", "dkk": 55270.08, "vendor": "Ananea Madivaru (5*)"},
+{"branch": "MD", "folder": "2055", "dep": "2026-07-15", "pax": "Mia Maia Voigt Smidt", "product": "Hotel", "due": "2026-07-07", "vendorAmt": 7350.39, "cur": "EUR", "dkk": 55495.44, "vendor": "Yalago"},
+{"branch": "MD", "folder": "2044", "dep": "2026-07-06", "pax": "Christian Nybo Ploug", "product": "Hotel", "due": "2026-07-07", "vendorAmt": 825.93, "cur": "EUR", "dkk": 6235.77, "vendor": "TBO Holidays"},
+{"branch": "MD", "folder": "2029", "dep": "2026-07-22", "pax": "Camilla Bundgaard Schobius", "product": "Hotel", "due": "2026-07-09", "vendorAmt": 5925.97, "cur": "EUR", "dkk": 44741.07, "vendor": "Yalago"},
+{"branch": "MD", "folder": "2052", "dep": "2026-07-22", "pax": "Michael Groth Funck Hansen", "product": "Hotel", "due": "2026-07-09", "vendorAmt": 10640.8, "cur": "USD", "dkk": 72357.44, "vendor": "Ananea Madivaru (5*)"},
+{"branch": "MD", "folder": "2044", "dep": "2026-07-06", "pax": "Christian Nybo Ploug", "product": "Transfer", "due": "2026-07-10", "vendorAmt": 274.0, "cur": "EUR", "dkk": 2068.7, "vendor": "wowtravels"},
+{"branch": "MD", "folder": "2044", "dep": "2026-07-06", "pax": "Christian Nybo Ploug", "product": "Hotel", "due": "2026-07-11", "vendorAmt": 6960.08, "cur": "DKK", "dkk": 6960.08, "vendor": "Webbeds"},
+{"branch": "MD", "folder": "2068", "dep": "2026-07-13", "pax": "METTE BRANDT MALLING JANUS", "product": "Transfer", "due": "2026-07-13", "vendorAmt": 82.92, "cur": "DKK", "dkk": 82.92, "vendor": "Hoppa"},
+{"branch": "MD", "folder": "2068", "dep": "2026-07-13", "pax": "METTE BRANDT MALLING JANUS", "product": "Transfer", "due": "2026-07-19", "vendorAmt": 162.29, "cur": "DKK", "dkk": 162.29, "vendor": "Hoppa"},
+{"branch": "MD", "folder": "2070", "dep": "2026-07-18", "pax": "Michael René Pedersen", "product": "Transfer", "due": "2026-07-19", "vendorAmt": 345.49, "cur": "DKK", "dkk": 345.49, "vendor": "Hoppa"},
+{"branch": "MD", "folder": "2074", "dep": "2026-08-21", "pax": "Thomas Hansen Zibrandtsen", "product": "Hotel", "due": "2026-07-23", "vendorAmt": 7530.0, "cur": "USD", "dkk": 51204.0, "vendor": "Park Hyatt Hadahaa (5*)"},
+{"branch": "MN", "folder": "1688", "dep": "2026-07-24", "pax": "ANNA MARIT TOKLE", "product": "Hotel", "due": "2026-07-24", "vendorAmt": 97.51, "cur": "EUR", "dkk": 736.2, "vendor": "TBO Holidays"},
+{"branch": "MN", "folder": "1720", "dep": "2026-07-24", "pax": "Atle Nerland", "product": "Hotel", "due": "2026-07-25", "vendorAmt": 7117.72, "cur": "USD", "dkk": 48400.5, "vendor": "Hummingbird Travel"},
+{"branch": "MN", "folder": "1715", "dep": "2026-07-25", "pax": "Marius Thuen", "product": "Hotel", "due": "2026-07-26", "vendorAmt": 7140.0, "cur": "USD", "dkk": 48552.0, "vendor": "Hummingbird Travel"},
+{"branch": "MN", "folder": "1716", "dep": "2026-07-25", "pax": "Nicolai Schlytter", "product": "Hotel", "due": "2026-07-26", "vendorAmt": 7300.14, "cur": "USD", "dkk": 49640.95, "vendor": "Hummingbird Travel"},
+{"branch": "MN", "folder": "1688", "dep": "2026-07-24", "pax": "ANNA MARIT TOKLE", "product": "Hotel", "due": "2026-07-26", "vendorAmt": 5932.78, "cur": "EUR", "dkk": 44792.49, "vendor": "Dhigali Maldives (5*)"},
+{"branch": "MD", "folder": "2068", "dep": "2026-07-13", "pax": "METTE BRANDT MALLING JANUS", "product": "Transfer", "due": "2026-07-26", "vendorAmt": 100.38, "cur": "DKK", "dkk": 100.38, "vendor": "Hoppa"},
+{"branch": "MD", "folder": "2068", "dep": "2026-07-13", "pax": "METTE BRANDT MALLING JANUS", "product": "Hotel", "due": "2026-07-26", "vendorAmt": 3351.56, "cur": "EUR", "dkk": 25304.28, "vendor": "TBO Holidays"},
+{"branch": "MD", "folder": "2070", "dep": "2026-07-18", "pax": "Michael René Pedersen", "product": "Hotel", "due": "2026-07-26", "vendorAmt": 2880.0, "cur": "EUR", "dkk": 21744.0, "vendor": "Rate Hawk"},
+{"branch": "MD", "folder": "2041", "dep": "2026-08-12", "pax": "Lars Nielsen", "product": "Hotel", "due": "2026-07-30", "vendorAmt": 5930.8, "cur": "USD", "dkk": 42701.76, "vendor": "Ananea Madivaru (5*)"},
+{"branch": "MD", "folder": "2074", "dep": "2026-08-21", "pax": "Thomas Hansen Zibrandtsen", "product": "Hotel", "due": "2026-07-30", "vendorAmt": 8378.0, "cur": "USD", "dkk": 56970.4, "vendor": "Pure Escapes"},
+{"branch": "MD", "folder": "2074", "dep": "2026-08-21", "pax": "Thomas Hansen Zibrandtsen", "product": "Hotel", "due": "2026-07-30", "vendorAmt": 17097.78, "cur": "USD", "dkk": 116264.9, "vendor": "Pure Escapes"},
+{"branch": "MN", "folder": "1691", "dep": "2026-09-08", "pax": "Stine Gurmark", "product": "Hotel", "due": "2026-08-10", "vendorAmt": 6412.0, "cur": "USD", "dkk": 46166.4, "vendor": "Diamonds Thudufushi (4+*)"},
+{"branch": "MN", "folder": "1700", "dep": "2026-09-17", "pax": "Anna Shahiri", "product": "Hotel", "due": "2026-08-19", "vendorAmt": 4592.0, "cur": "USD", "dkk": 33062.4, "vendor": "Diamonds Thudufushi (4+*)"},
+{"branch": "MN", "folder": "1702", "dep": "2026-09-25", "pax": "Trine Røssel Ødegaard", "product": "Hotel", "due": "2026-08-20", "vendorAmt": 6811.8, "cur": "USD", "dkk": 49044.96, "vendor": "Pure Escapes"},
+{"branch": "MN", "folder": "1703", "dep": "2026-09-25", "pax": "Kjersti Setså Jensen", "product": "Hotel", "due": "2026-08-20", "vendorAmt": 5428.8, "cur": "USD", "dkk": 39087.36, "vendor": "Pure Escapes"},
+{"branch": "MN", "folder": "1710", "dep": "2026-09-25", "pax": "Thomas Michael Høyven Mjeldheim", "product": "Hotel", "due": "2026-08-20", "vendorAmt": 6563.8, "cur": "USD", "dkk": 44633.84, "vendor": "Pure Escapes"},
+{"branch": "MN", "folder": "1731", "dep": "2026-09-26", "pax": "Maria Therese Eriksson", "product": "Hotel", "due": "2026-08-20", "vendorAmt": 10011.8, "cur": "USD", "dkk": 68080.24, "vendor": "Pure Escapes"},
+{"branch": "MN", "folder": "1733", "dep": "2026-09-08", "pax": "Mia Vannebo", "product": "Hotel", "due": "2026-08-24", "vendorAmt": 4502.44, "cur": "EUR", "dkk": 33993.42, "vendor": "Yalago"},
+{"branch": "MD", "folder": "2080", "dep": "2026-10-05", "pax": "Michella Raun Hesselberg", "product": "Hotel", "due": "2026-09-06", "vendorAmt": 8661.5, "cur": "USD", "dkk": 58898.2, "vendor": "Emerald Faarufushi (5*)"},
+{"branch": "MN", "folder": "1691", "dep": "2026-09-08", "pax": "Stine Gurmark", "product": "Hotel", "due": "2026-09-08", "vendorAmt": 5466.0, "cur": "USD", "dkk": 39355.2, "vendor": "Ananea Madivaru (5*)"},
+{"branch": "MD", "folder": "2065", "dep": "2026-10-08", "pax": "Morten Winther", "product": "Hotel", "due": "2026-09-08", "vendorAmt": 80091.0, "cur": "USD", "dkk": 520591.5, "vendor": "Miracle Oman"},
+{"branch": "MD", "folder": "2065", "dep": "2026-10-08", "pax": "Morten Winther", "product": "Transfer", "due": "2026-09-08", "vendorAmt": 250.0, "cur": "USD", "dkk": 1700.0, "vendor": "Miracle Oman"},
+{"branch": "MD", "folder": "2057", "dep": "2026-09-23", "pax": "Jette Ella Holmelin", "product": "Hotel", "due": "2026-09-10", "vendorAmt": 9637.79, "cur": "EUR", "dkk": 72765.31, "vendor": "Yalago"},
+{"branch": "MD", "folder": "2069", "dep": "2026-10-14", "pax": "Lisa Munch-Andersen", "product": "Hotel", "due": "2026-09-15", "vendorAmt": 4692.0, "cur": "USD", "dkk": 31905.6, "vendor": "Diamonds Thudufushi (4+*)"},
+{"branch": "MN", "folder": "1673", "dep": "2026-09-15", "pax": "Tor Kristjan Heiberg", "product": "Hotel", "due": "2026-09-16", "vendorAmt": 5983.14, "cur": "EUR", "dkk": 45172.71, "vendor": "Yalago"},
+{"branch": "MD", "folder": "2077", "dep": "2026-10-12", "pax": "Lotte Kastrup Bridal", "product": "Hotel", "due": "2026-09-22", "vendorAmt": 10189.0, "cur": "USD", "dkk": 69285.2, "vendor": "Conrad Maldives Rangali Island (5*)"},
+{"branch": "MN", "folder": "1743", "dep": "2026-10-29", "pax": "Tor Fredrik Müller", "product": "Hotel", "due": "2026-09-24", "vendorAmt": 14401.6, "cur": "USD", "dkk": 97930.88, "vendor": "Pure Escapes"},
+{"branch": "MD", "folder": "2063", "dep": "2026-10-09", "pax": "Thomas Lindberg Bølle", "product": "Hotel", "due": "2026-09-26", "vendorAmt": 8887.54, "cur": "EUR", "dkk": 67100.93, "vendor": "Yalago"},
+{"branch": "MD", "folder": "2036", "dep": "2026-10-31", "pax": "Rikke Westmark Fynboe", "product": "Hotel", "due": "2026-09-26", "vendorAmt": 5835.52, "cur": "EUR", "dkk": 44058.18, "vendor": "TBO Holidays"},
+{"branch": "MN", "folder": "1712", "dep": "2026-10-30", "pax": "Tone Stokkereit Mattsson", "product": "Hotel", "due": "2026-09-30", "vendorAmt": 6588.0, "cur": "USD", "dkk": 44798.4, "vendor": "Diamonds Athuruga (4+*)"},
+{"branch": "MN", "folder": "1747", "dep": "2026-11-02", "pax": "Rolf Espen Lehmann", "product": "Hotel", "due": "2026-10-03", "vendorAmt": 9395.5, "cur": "USD", "dkk": 63889.4, "vendor": "Emerald Maldives (5*)"},
+{"branch": "MN", "folder": "1732", "dep": "2026-10-08", "pax": "Egil Henriksen", "product": "Hotel", "due": "2026-10-05", "vendorAmt": 8945.3, "cur": "EUR", "dkk": 67537.02, "vendor": "TBO Holidays"},
+{"branch": "MN", "folder": "1732", "dep": "2026-10-08", "pax": "Egil Henriksen", "product": "Transfer", "due": "2026-10-08", "vendorAmt": 621.88, "cur": "DKK", "dkk": 621.88, "vendor": "Hoppa"},
+{"branch": "MN", "folder": "1742", "dep": "2026-10-14", "pax": "Karina Aase", "product": "Hotel", "due": "2026-10-14", "vendorAmt": 7281.6, "cur": "USD", "dkk": 49514.88, "vendor": "Hummingbird Travel"},
+{"branch": "MN", "folder": "1749", "dep": "2026-10-16", "pax": "Ståle Ørstavik Clementsen", "product": "Hotel", "due": "2026-10-17", "vendorAmt": 10653.5, "cur": "USD", "dkk": 72443.8, "vendor": "Emerald Maldives (5*)"},
+{"branch": "MD", "folder": "2075", "dep": "2026-11-16", "pax": "Morten Thise", "product": "Hotel", "due": "2026-10-18", "vendorAmt": 6564.0, "cur": "USD", "dkk": 44635.2, "vendor": "Noku Maldives (4+*)"},
+{"branch": "MN", "folder": "1724", "dep": "2026-11-09", "pax": "Linn Olsen-Svaleng", "product": "Hotel", "due": "2026-10-20", "vendorAmt": 15600.0, "cur": "USD", "dkk": 106080.0, "vendor": "InterContinental Maamunagau (5+*)"},
+{"branch": "MN", "folder": "1725", "dep": "2026-11-05", "pax": "Harald Størseth", "product": "Hotel", "due": "2026-10-23", "vendorAmt": 4956.4, "cur": "USD", "dkk": 33703.52, "vendor": "Ananea Madivaru (5*)"},
+{"branch": "MD", "folder": "2036", "dep": "2026-10-31", "pax": "Rikke Westmark Fynboe", "product": "Transfer", "due": "2026-11-01", "vendorAmt": 170.0, "cur": "EUR", "dkk": 1283.5, "vendor": "Etnia Travel Concept"},
+{"branch": "MD", "folder": "2036", "dep": "2026-10-31", "pax": "Rikke Westmark Fynboe", "product": "Hotel", "due": "2026-11-06", "vendorAmt": 856.38, "cur": "EUR", "dkk": 6465.67, "vendor": "TBO Holidays"},
+{"branch": "MN", "folder": "1730", "dep": "2026-12-17", "pax": "Norun Sønderland Nustad", "product": "Hotel", "due": "2026-11-11", "vendorAmt": 62851.5, "cur": "USD", "dkk": 408534.75, "vendor": "Ayada Maldives (5*)"},
+{"branch": "MD", "folder": "2078", "dep": "2026-11-28", "pax": "Karina Østergaard", "product": "Hotel", "due": "2026-11-15", "vendorAmt": 11336.4, "cur": "USD", "dkk": 77087.52, "vendor": "Ananea Madivaru (5*)"},
+{"branch": "MN", "folder": "1719", "dep": "2026-11-20", "pax": "Astrid Bakken Hansen", "product": "Hotel", "due": "2026-11-21", "vendorAmt": 9954.0, "cur": "USD", "dkk": 67687.2, "vendor": "Ananea Madivaru (5*)"},
+{"branch": "MN", "folder": "1729", "dep": "2026-12-12", "pax": "BJØRN OLSTAD", "product": "Hotel", "due": "2026-11-29", "vendorAmt": 21816.0, "cur": "USD", "dkk": 148348.8, "vendor": "Ayada Maldives (5*)"},
+{"branch": "MN", "folder": "1713", "dep": "2026-12-06", "pax": "Arijana Horic", "product": "Hotel", "due": "2026-11-29", "vendorAmt": 6930.38, "cur": "EUR", "dkk": 52324.37, "vendor": "Yalago"},
+{"branch": "MN", "folder": "1723", "dep": "2026-12-29", "pax": "Bjørn Krzywinski Sørensen", "product": "Hotel", "due": "2026-11-29", "vendorAmt": 6500.0, "cur": "USD", "dkk": 44200.0, "vendor": "Miracle Oman"},
+{"branch": "MN", "folder": "1741", "dep": "2026-12-18", "pax": "GUNN ERTRESVÅG", "product": "Hotel", "due": "2026-12-05", "vendorAmt": 17725.5, "cur": "USD", "dkk": 120533.4, "vendor": "Meyyafushi Maldives (5*)"},
+{"branch": "MN", "folder": "1707", "dep": "2026-12-19", "pax": "Tom Erik Heimsnes", "product": "Hotel", "due": "2026-12-06", "vendorAmt": 20543.39, "cur": "EUR", "dkk": 155102.59, "vendor": "Yalago"},
+{"branch": "MD", "folder": "2051", "dep": "2027-01-09", "pax": "Jens Meinhard Rasmussen", "product": "Hotel", "due": "2026-12-11", "vendorAmt": 20520.0, "cur": "USD", "dkk": 139536.0, "vendor": "Meyyafushi Maldives (5*)"},
+{"branch": "MD", "folder": "2072", "dep": "2027-01-13", "pax": "Pernille Veronica Rosenvinge", "product": "Hotel", "due": "2026-12-14", "vendorAmt": 17523.0, "cur": "USD", "dkk": 119156.4, "vendor": "Park Hyatt Hadahaa (5*)"},
+{"branch": "MD", "folder": "2083", "dep": "2027-01-10", "pax": "Louise Emilie Van Hauen", "product": "Hotel", "due": "2026-12-20", "vendorAmt": 5250.0, "cur": "USD", "dkk": 35700.0, "vendor": "JA Manafaru (5*)"},
+{"branch": "MD", "folder": "2067", "dep": "2027-01-21", "pax": "Kira Katrine Winberg", "product": "Hotel", "due": "2026-12-22", "vendorAmt": 4271.4, "cur": "USD", "dkk": 29045.52, "vendor": "Hummingbird Travel"},
+{"branch": "MD", "folder": "2084", "dep": "2027-01-11", "pax": "Jørn Zenon Styczen", "product": "Hotel", "due": "2026-12-25", "vendorAmt": 9000.4, "cur": "USD", "dkk": 61202.72, "vendor": "Ananea Madivaru (5*)"},
+{"branch": "MN", "folder": "1740", "dep": "2027-01-10", "pax": "Roar Sivertsen", "product": "Hotel", "due": "2026-12-27", "vendorAmt": 12442.0, "cur": "USD", "dkk": 84605.6, "vendor": "Ananea Madivaru (5*)"},
+{"branch": "MN", "folder": "1744", "dep": "2027-01-11", "pax": "Torleif Erfjord", "product": "Hotel", "due": "2026-12-29", "vendorAmt": 9442.0, "cur": "EUR", "dkk": 71287.1, "vendor": "Avani+ Fares Maldives (5*)"},
+{"branch": "MD", "folder": "2083", "dep": "2027-01-10", "pax": "Louise Emilie Van Hauen", "product": "Hotel", "due": "2027-01-11", "vendorAmt": 1255.84, "cur": "EUR", "dkk": 9481.59, "vendor": "Stuba"},
+{"branch": "MD", "folder": "2064", "dep": "2027-01-25", "pax": "Søren Roland", "product": "Hotel", "due": "2027-01-12", "vendorAmt": 9919.2, "cur": "USD", "dkk": 67450.56, "vendor": "Ananea Madivaru (5*)"},
+{"branch": "MD", "folder": "2086", "dep": "2027-01-31", "pax": "Gitte Møller", "product": "Hotel", "due": "2027-01-18", "vendorAmt": 7500.0, "cur": "USD", "dkk": 51000.0, "vendor": "JA Manafaru (5*)"},
+{"branch": "MN", "folder": "1738", "dep": "2027-02-20", "pax": "Per Joachim Klyve Eide", "product": "Hotel", "due": "2027-01-20", "vendorAmt": 17344.0, "cur": "USD", "dkk": 117939.2, "vendor": "Emerald Maldives (5*)"},
+{"branch": "MD", "folder": "2083", "dep": "2027-01-10", "pax": "Louise Emilie Van Hauen", "product": "Transfer", "due": "2027-01-21", "vendorAmt": 51.84, "cur": "EUR", "dkk": 391.39, "vendor": "Transfeero"},
+{"branch": "MD", "folder": "2083", "dep": "2027-01-10", "pax": "Louise Emilie Van Hauen", "product": "Hotel", "due": "2027-01-23", "vendorAmt": 8615.0, "cur": "USD", "dkk": 58582.0, "vendor": "LUX* South Ari Atoll (5*)"},
+{"branch": "MN", "folder": "1739", "dep": "2027-02-22", "pax": "Sigmund Ringdal", "product": "Hotel", "due": "2027-01-23", "vendorAmt": 16080.0, "cur": "USD", "dkk": 109344.0, "vendor": "Emerald Faarufushi (5*)"},
+{"branch": "MN", "folder": "1735", "dep": "2027-02-19", "pax": "JEPPE SONGE-MØLLER", "product": "Hotel", "due": "2027-02-06", "vendorAmt": 16228.05, "cur": "USD", "dkk": 110350.74, "vendor": "Ananea Madivaru (5*)"},
+{"branch": "MN", "folder": "1734", "dep": "2027-03-18", "pax": "LARS TERJE GRORUD", "product": "Hotel", "due": "2027-02-18", "vendorAmt": 18065.25, "cur": "USD", "dkk": 122843.7, "vendor": "Meyyafushi Maldives (5*)"},
+{"branch": "MD", "folder": "2079", "dep": "2027-03-01", "pax": "Tina Egegaard", "product": "Hotel", "due": "2027-02-22", "vendorAmt": 7127.39, "cur": "EUR", "dkk": 53811.79, "vendor": "Yalago"},
+{"branch": "MD", "folder": "2087", "dep": "2027-03-24", "pax": "HELLE DANNAHER", "product": "Hotel", "due": "2027-02-23", "vendorAmt": 9914.78, "cur": "USD", "dkk": 67420.5, "vendor": "Hummingbird Travel"},
+{"branch": "MD", "folder": "2085", "dep": "2027-02-15", "pax": "STEEN BUNDGAARD KNUDSEN", "product": "Hotel", "due": "2027-02-23", "vendorAmt": 7109.55, "cur": "EUR", "dkk": 53677.1, "vendor": "TBO Holidays"},
+{"branch": "MD", "folder": "2085", "dep": "2027-02-15", "pax": "STEEN BUNDGAARD KNUDSEN", "product": "Transfer", "due": "2027-02-23", "vendorAmt": 64.0, "cur": "EUR", "dkk": 483.2, "vendor": "Rate Hawk"},
+{"branch": "MN", "folder": "1748", "dep": "2027-03-16", "pax": "Jan Eric Haagensen", "product": "Hotel", "due": "2027-03-01", "vendorAmt": 13555.0, "cur": "USD", "dkk": 92174.0, "vendor": "Ayada Maldives (5*)"},
+{"branch": "MN", "folder": "1669", "dep": "2026-02-23", "pax": "INGUNN MERETE HOLTHE", "product": "Other", "due": "2027-03-05", "vendorAmt": 104.0, "cur": "USD", "dkk": 707.2, "vendor": "Sri Lanka ETA"},
+{"branch": "MD", "folder": "2082", "dep": "2027-05-01", "pax": "Louise Hay Pedersen", "product": "Hotel", "due": "2027-04-18", "vendorAmt": 5082.0, "cur": "USD", "dkk": 34557.6, "vendor": "Niva Kuramathi Maldives (4+*)"},
+{"branch": "MD", "folder": "2081", "dep": "2027-06-03", "pax": "Simone Larsen Recht", "product": "Hotel", "due": "2027-05-20", "vendorAmt": 6653.65, "cur": "USD", "dkk": 45244.82, "vendor": "Ananea Madivaru (5*)"},
+];
+const vpName = v => v.replace(/\s*\([^)]*\)\s*$/,'');
+const fmtFX = (n,cur)=> (n<0?'-':'') + Math.abs(n).toLocaleString('da-DK',{maximumFractionDigits:0}) + (cur?' '+cur:'');
+const fmtDkkR = n => (n<0?'-':'') + Math.abs(Math.round(n)).toLocaleString('da-DK') + ' kr';
+function vpCurSum(list){ const m={}; list.forEach(p=>{m[p.cur]=(m[p.cur]||0)+p.vendorAmt;}); return Object.entries(m).map(([c,n])=>fmtFX(n,c)).join(' · '); }
+function vpCredits(){
+  const byV={}; VENDOR_PAYMENTS.forEach(p=>{(byV[p.vendor]=byV[p.vendor]||[]).push(p);});
+  const out=[];
+  Object.entries(byV).forEach(([v,ps])=>{
+    const credits=ps.filter(p=>p.dkk<0); if(!credits.length) return;
+    const upcoming=ps.filter(p=>p.dkk>0).sort((a,b)=>(a.due||'').localeCompare(b.due||''));
+    out.push({vendor:v,credits,upcoming,totalDkk:credits.reduce((s,c)=>s+c.dkk,0)});
+  });
+  return out.sort((a,b)=>a.totalDkk-b.totalDkk);
+}
+function vpTripId(p){ return (window.VP_REFMAP||{})[p.branch+p.folder] || (window.VP_REFMAP||{})[p.folder] || null; }
+function vpRow(p){
+  const t0=today(); const overdue = p.due && p.due<=t0;
+  const id=vpTripId(p); const st=vpStatus(p); const paid=st!=='aaben';
+  return `<tr class="${id?'click':''}" ${id?`onclick="viewTrip('${id}')"`:''} style="${st==='afstemt'?'opacity:.55':''}">
+    <td style="white-space:nowrap" class="${overdue&&!paid?'overdue':''}">${fmtDY(p.due)}${overdue&&!paid?' ⚠':''}</td>
+    <td><b style="color:var(--forest)">${vpName(p.vendor)}</b><div class="mini">${p.branch} ${p.folder} · ${p.pax}${p.product?' · '+p.product:''}</div></td>
+    <td class="r" style="white-space:nowrap;font-weight:600">${fmtFX(p.vendorAmt,p.cur)}</td>
+    <td class="r mini" style="white-space:nowrap">${fmtDkkR(p.dkk)}</td>
+    <td class="r" style="white-space:nowrap">${vpStatusSelect(p._i,st)}</td></tr>`;
+}
+function renderVP(mode){
+  const wrap=document.getElementById('vpwrap'); if(!wrap) return;
+  document.getElementById('vpb-open')?.classList.toggle('on',mode==='open');
+  document.getElementById('vpb-all')?.classList.toggle('on',mode==='all');
+  window.VP_KEY2IDX=window.VP_KEY2IDX||{}; VENDOR_PAYMENTS.forEach((p,i)=>{p._i=i; VP_KEY2IDX[vpKey(p)]=i;});
+  const t0=today(), t30=plusDays(30);
+  let list=VENDOR_PAYMENTS.filter(p=>p.dkk>0 && vpStatus(p)==='aaben').sort((a,b)=>(a.due||'').localeCompare(b.due||''));
+  if(mode==='open') list=list.filter(p=>p.due && p.due<=t30);
+  const overdue=list.filter(p=>p.due&&p.due<=t0);
+  const sum=list.reduce((s,p)=>s+p.dkk,0);
+  wrap.innerHTML = `<p class="mini" style="margin:0 0 8px">${list.length} ubetalte · sum ${fmtDkkR(sum)}${overdue.length?` · <span class="overdue">${overdue.length} forfaldne</span>`:''}${mode==='open'?' · viser ≤30 dage':' · alle ubetalte'} · klik en linje for at åbne rejsen</p>
+    <table><tr><th>Forfald</th><th>Leverandør · rejse</th><th class="r">Beløb</th><th class="r">DKK</th><th class="r">Status</th></tr>
+    ${list.map(vpRow).join('')||'<tr><td colspan="5" class="muted">Alt betalt — intet til forfald. 🎉</td></tr>'}</table>`;
+}
+function vpFinanceCards(){
+  const creds=vpCredits();
+  const credTotDkk=creds.reduce((s,c)=>s+c.totalDkk,0);
+  const credCard = `<div class="card" style="border-color:var(--gold);background:#fffdf6">
+    <h3 style="color:#a3874e">⚑ Kreditter — husk at trække fra <span class="r" style="color:var(--ok)">${fmtDkkR(credTotDkk)}</span></h3>
+    ${creds.map(c=>{const nx=c.upcoming.find(u=>u.due>=today())||c.upcoming[0];const later=c.upcoming.filter(u=>u.due>=today()).length;return `<div class="el-item" style="border-color:#ecdfbf;background:#faf6ec">
+      <b>${vpName(c.vendor)}</b><span style="float:right;color:var(--ok);font-weight:700">${vpCurSum(c.credits)}</span>
+      <div class="muted" style="margin:3px 0 0">Kredit fra: ${c.credits.map(x=>x.branch+' '+x.folder+' · '+x.pax).join(' &nbsp;·&nbsp; ')}</div>
+      ${nx?`<div style="margin-top:6px;font-size:11.5px">→ træk fra næste betaling til ${vpName(c.vendor)}: <b>${nx.branch} ${nx.folder} · ${nx.pax}</b> · ${fmtFX(nx.vendorAmt,nx.cur)} · forfald ${fmtDY(nx.due)}${later>1?` <span class="muted">(+${later-1} flere kommende)</span>`:''}</div>`:'<div class="muted" style="margin-top:6px">Ingen kommende betaling til denne leverandør — kreditten står til gode.</div>'}
+    </div>`;}).join('')}
+    <p class="mini" style="margin:8px 0 0">Kredit = leverandøren skylder os (negativt beløb i rapporten). Tjek her før du betaler en regning til samme leverandør.</p></div>`;
+  const payCard = `<div class="card"><h3>Leverandørbetalinger — forfald
+      <span class="seg"><button id="vpb-open" class="on" onclick="renderVP('open')">Til forfald</button><button id="vpb-all" onclick="renderVP('all')">Alle (${VENDOR_PAYMENTS.filter(p=>p.dkk>0).length})</button></span></h3>
+      <div id="vpwrap"></div></div>`;
+  return credCard+payCard;
+}
+
+
+// ═══ AUTH ═══
+async function init(){
+  const { data } = await db.auth.getSession();
+  session = data.session;
+  db.auth.onAuthStateChange((_e,s)=>{ const had=!!session; session=s; if(had!==!!s) render(); });
+  render();
+}
+function render(){ session ? showApp() : showLogin(); }
+function showLogin(){
+  $('#sidebar').style.display='none';
+  app.innerHTML = `<div class="card" id="login">
+    <div class="center" style="margin-bottom:16px">
+      <div class="pf" style="letter-spacing:9px;font-size:21px;color:var(--forest);font-weight:500">MALDIVIA</div>
+      <div style="font-size:8.5px;letter-spacing:3.5px;color:var(--gold);text-transform:uppercase;margin-top:4px;font-weight:700">Travel Design · OS</div></div>
+    <form id="loginform">
+      <label for="em">E-mail</label><input id="em" name="email" type="email" autocomplete="username" required>
+      <label for="pw">Kodeord</label><input id="pw" name="password" type="password" autocomplete="current-password" required minlength="6">
+      <div style="margin-top:15px" class="row">
+        <button class="btn" type="submit">Log ind</button>
+        <button class="btn ghost" type="button" id="signupbtn">Opret bruger</button>
+      </div>
+    </form>
+    <div class="err" id="autherr"></div>
+    <p class="muted">Kun teamets e-mailadresser får adgang til data.</p></div>`;
+  const msg=(t,ok)=>{const e=$('#autherr');e.className=ok?'err ok':'err';e.textContent=t;};
+  const creds=()=>{const fd=new FormData(document.getElementById('loginform'));return{email:String(fd.get('email')||'').trim().toLowerCase(),password:String(fd.get('password')||'')};};
+  document.getElementById('loginform').addEventListener('submit', async ev=>{
+    ev.preventDefault(); const c=creds();
+    if(!c.email||!c.password) return msg('Udfyld både e-mail og kodeord.');
+    msg('Logger ind…',true);
+    const {error}=await db.auth.signInWithPassword(c);
+    if(error) msg(/invalid/i.test(error.message)?'Forkert e-mail eller kodeord.':/confirm/i.test(error.message)?'E-mail ikke bekræftet — sig til Claude.':error.message);
+  });
+  document.getElementById('signupbtn').addEventListener('click', async ()=>{
+    const c=creds();
+    if(!c.email||!c.password) return msg('Udfyld e-mail + kodeord (min. 6 tegn), tryk så Opret.');
+    const {error}=await db.auth.signUp(c);
+    msg(error?error.message:'Bruger oprettet — bed Claude bekræfte den, og log ind.',!error);
+  });
+}
+async function showApp(){
+  $('#sidebar').style.display='';
+  const email = session.user.email;
+  const { data: tm } = await db.from('team_members').select('name, initials').eq('email', email).maybeSingle();
+  window.ME = tm?tm.initials:null; window.MYNAME = tm?tm.name.split(' ')[0]:email;
+  $('#who').innerHTML = (tm?tm.name:email) + '<br><a href="#" onclick="db.auth.signOut();return false">Log ud</a>';
+  viewDash();
+}
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{navTo(b.dataset.v);({dash:viewDash,sales:viewSales,finance:viewFinance,marketing:viewMarketing,reports:viewReports,new:viewNew})[b.dataset.v]();});
+function navTo(v){document.querySelectorAll('#nav button').forEach(x=>x.classList.toggle('on',x.dataset.v===v));}
+
+// ═══ FÆLLES ═══
+async function fetchTrips(){
+  const { data } = await db.from('trips').select('id, ref_no, branch, status, departure_date, return_date, pax_count, customer_currency, package_sell_total, package_sell_dkk, buy_dkk, comm_dkk, booking_date, owner, balance_due, deposit_amount, cancelled_at, cancel_reason, retained_dkk, loss_dkk, refund_dkk, customers(first_name,last_name), trip_destinations(destination)').not('status','in','("voided")');
+  return data || [];
+}
+const active = t => !['canx','voided'].includes(t.status);
+const tripRow = t => `<div class="list-item" onclick="viewTrip('${t.id}')"><span class="ic">◆</span>
+  <span><b style="color:var(--forest)">${t.customers.last_name}, ${t.customers.first_name}</b> <span class="muted">${t.ref_no} · ${t.trip_destinations.map(d=>d.destination).join(' + ')} · ${t.pax_count} pax · ${t.owner||''}</span></span>
+  <span class="when">${fmtD(t.departure_date)} → ${fmtD(t.return_date)}</span></div>`;
+const taskLine = (k, refresh) => `<div class="task-line">
+  <input type="checkbox" onchange="db.from('tasks').update({status:'udfoert',done_at:new Date().toISOString()}).eq('id','${k.id}').then(${refresh})">
+  <span class="tt" ${k.trip_id?`onclick="viewTrip('${k.trip_id}')"`:''}>${k.title}<br><span class="muted">${k.trips?k.trips.ref_no+' · ':''}${k.assignee||''}</span></span>
+  <span class="${k.due_date&&k.due_date<=today()?'overdue':'muted'}" style="font-size:11px">${fmtD(k.due_date)}</span></div>`;
+
+// Sammenfald: samme destination + overlappende ophold
+function findOverlaps(trips, horizonDays){
+  const t0 = today(), tH = plusDays(horizonDays);
+  const rel = trips.filter(t => active(t) && t.return_date && t.departure_date <= tH && t.return_date >= t0);
+  const clusters = [];
+  for(let i=0;i<rel.length;i++) for(let j=i+1;j<rel.length;j++){
+    const a=rel[i], b=rel[j];
+    const shared = a.trip_destinations.map(d=>d.destination).filter(d=>b.trip_destinations.some(x=>x.destination===d));
+    if(!shared.length) continue;
+    if(a.departure_date <= b.return_date && b.departure_date <= a.return_date){
+      const from = a.departure_date>b.departure_date?a.departure_date:b.departure_date;
+      const to = a.return_date<b.return_date?a.return_date:b.return_date;
+      let c = clusters.find(c=>c.dest===shared[0] && c.trips.some(t=>t.id===a.id||t.id===b.id) && c.from<=to && from<=c.to);
+      if(c){ if(!c.trips.some(t=>t.id===a.id))c.trips.push(a); if(!c.trips.some(t=>t.id===b.id))c.trips.push(b); c.from=c.from<from?c.from:from; c.to=c.to>to?c.to:to; }
+      else clusters.push({dest:shared[0], from, to, trips:[a,b]});
+    }
+  }
+  return clusters.sort((x,y)=>x.from.localeCompare(y.from));
+}
+
+// ═══ DASHBOARD ═══
+async function viewDash(){
+  navTo('dash');
+  app.innerHTML = '<div class="card">Gør dagen klar…</div>';
+  const t0=today(), t7=plusDays(7), t1=plusDays(1), tm7=plusDays(-7);
+  const [trips, rk, rb, rd, re] = await Promise.all([
+    fetchTrips(),
+    db.from('tasks').select('*, trips(ref_no)').eq('status','aaben').order('due_date').then(r=>r.data||[]),
+    db.from('daily_briefing').select('*').order('briefing_date',{ascending:false}).limit(1).then(r=>r.data&&r.data[0]),
+    db.from('documents').select('id',{count:'exact',head:true}),
+    db.from('trip_elements').select('id,element_type,description,start_date,end_date,status,suppliers:supplier_id(name),trips!inner(id,ref_no,status,customers(last_name,first_name))').lte('start_date',t0).or(`end_date.gte.${t0},end_date.is.null`).then(r=>r.data||[]),
+    vpLoadRecon()
+  ]);
+  const brief = rb;
+  const act = trips.filter(active);
+  const depToday = act.filter(t=>t.departure_date===t0);
+  const depWeek = act.filter(t=>t.departure_date>t0&&t.departure_date<=t7);
+  const depPrev = act.filter(t=>t.departure_date>=tm7&&t.departure_date<t0);
+  const outNow = act.filter(t=>t.departure_date<=t0&&(t.return_date||t.departure_date)>=t0&&t.status!=='faerdig');
+  const homeSoon = act.filter(t=>t.return_date&&t.return_date>=t0&&t.return_date<=t1&&t.departure_date<=t0);
+  const tasksDue = rk.filter(k=>k.due_date&&k.due_date<=t0);
+  const restTasks = rk.filter(k=>k.task_type==='restbetaling');
+  // Betalingsvagt: kun overskredne betalinger — kunder + leverandører
+  const custOverdue = restTasks.filter(k=>k.due_date && k.due_date<=t0);
+  const vpOpen = VENDOR_PAYMENTS.filter(p=>p.dkk>0 && vpStatus(p)==='aaben');
+  const vpOverdue = vpOpen.filter(p=>p.due && p.due<=t0);
+  const vpOverdueSum = vpOverdue.reduce((s,p)=>s+ +(p.dkk||0),0);
+  const payOverdue = custOverdue.length + vpOverdue.length;
+  const dueOwners = [...new Set(tasksDue.map(k=>k.assignee).filter(Boolean))];
+  const paxOut = outNow.reduce((s,t)=>s+(t.pax_count||0),0);
+  const pipeline = act.filter(t=>t.departure_date>=t0).reduce((s,t)=>s+ +(t.package_sell_dkk||0),0);
+  const mSum = act.filter(t=>t.departure_date.slice(0,7)===t0.slice(0,7)).reduce((s,t)=>s+ +(t.package_sell_dkk||0),0);
+  const ytdSum = act.filter(t=>t.departure_date>='2026-01-01'&&t.departure_date<=t0).reduce((s,t)=>s+ +(t.package_sell_dkk||0),0);
+  const overlaps = findOverlaps(act, 45);
+  // Elementer i brug i dag — grupperet pr. hotel/fly så delte ophold ses med det samme
+  const inUseEls = (re||[]).filter(e=>e.trips && active(e.trips) && !['cx','refunderet'].includes(e.status)
+    && e.start_date<=t0 && ((e.end_date && e.end_date>=t0) || (!e.end_date && e.start_date===t0)));
+  const elGroups = {};
+  inUseEls.forEach(e=>{ const sup=e.suppliers&&e.suppliers.name;
+    // Hoteller grupperes pr. hotel (leverandør). Fly/transfer pr. flynr/rute (beskrivelse),
+    // så de ikke fejlagtigt samles under konsolidatoren Billetkontoret.
+    const label=e.element_type==='hotel' ? (sup||e.description||'—') : (e.description||sup||'—');
+    const key=e.element_type+'||'+label;
+    (elGroups[key]=elGroups[key]||{type:e.element_type,label,rows:[]}).rows.push(e); });
+  const inUse = Object.values(elGroups).map(g=>{ g.tripIds=[...new Set(g.rows.map(r=>r.trips.id))]; return g; })
+    .sort((a,b)=>(b.tripIds.length-a.tripIds.length)||a.label.localeCompare(b.label));
+  const sharedEls = inUse.filter(g=>g.tripIds.length>1).length;
+  const tripsInUse = new Set(inUseEls.map(e=>e.trips.id)).size;
+  const EL_TAG={hotel:'Hotel',flight:'Fly',ticket:'Billet',transfer:'Transfer',other:'Andet',fee:'Gebyr',insurance:'Forsikring'};
+  const wkD = depToday.length+depWeek.length-depPrev.length;
+  const hour = new Date().getHours();
+  const greet = hour<10?'God morgen':hour<18?'God dag':'God aften';
+  const delta = n => n===0?'':`<span class="delta ${n>0?'up':'down'}">${n>0?'▲':'▼'}${Math.abs(n)}</span>`;
+  // ── Morgenbrief-data (rene menupunkter) ──
+  const briefDate = brief ? fmtD(brief.briefing_date) : new Date().toLocaleDateString('da-DK',{day:'numeric',month:'short'});
+  const isAdmin = ['WEN','RAS'].includes(window.ME);              // super-admins: Wendie + Rasmus
+  const krFull = n => Math.round(n||0).toLocaleString('da-DK') + ' kr.';
+  // Vigtige opgaver i dag (forfaldne/i dag), ekskl. restbetalinger som har egen sektion
+  const briefTasks = rk.filter(k=>k.due_date&&k.due_date<=t0&&k.task_type!=='restbetaling')
+                       .sort((a,b)=>(a.due_date||'').localeCompare(b.due_date||''));
+  // Betalinger til forfald: restbetalinger med forfald i dag eller tidligere
+  const briefPays = restTasks.filter(k=>k.due_date&&k.due_date<=t0)
+                             .sort((a,b)=>(a.due_date||'').localeCompare(b.due_date||''));
+  // Beløb omdannet til faktisk indtægt i dag = pakkesalg for rejser der afrejser i dag
+  const revToday = depToday.reduce((s,t)=>s+ +(t.package_sell_dkk||0),0);
+  const revRas = depToday.filter(t=>t.owner==='RAS').reduce((s,t)=>s+ +(t.package_sell_dkk||0),0);
+  const revWen = depToday.filter(t=>t.owner==='WEN').reduce((s,t)=>s+ +(t.package_sell_dkk||0),0);
+  const mailF = (brief&&brief.mail_flag)||[];
+  const moveF = (brief&&brief.movements)||[];
+  const pulseF = (brief&&brief.pulse)||[];
+  const briefRow = (txt,when,onclick)=>`<div class="brief-item${onclick?' click':''}"${onclick?` onclick="${onclick}"`:''}><span class="ic">→</span><span class="tx">${txt}</span>${when?`<span class="when">${when}</span>`:''}</div>`;
+  const briefSec = (label,n,rows)=> rows.length ? `<div class="brief-sec"><p class="brief-sec-h">${label}${n?`<span class="n">${n}</span>`:''}</p>${rows.join('')}</div>` : '';
+  const overdueWhen = k => `<span class="${k.due_date<t0?'overdue':''}">${fmtD(k.due_date)}</span>`;
+  const CAP=5;
+  app.innerHTML = `
+  <div class="pagehead"><h2>${greet}, <i style="color:var(--gold)">${window.MYNAME}</i>.</h2>
+  <span class="sub">${new Date().toLocaleDateString('da-DK',{weekday:'long',day:'numeric',month:'long'})}</span>
+  <span class="sub" style="margin-left:auto">${depToday.length?depToday.length+' afrejser i dag':'ingen afrejser i dag'} · ${paxOut} gæster ude · ${tasksDue.length?tasksDue.length+' opgaver til forfald':'alt ajour'}</span></div>
+
+  <div class="card" style="margin-bottom:12px">
+    <h3>Morgenbrief <span class="r muted">pr. ${briefDate}</span></h3>
+    ${brief && brief.top_line ? `<p class="brief-lead">${brief.top_line} <a href="#" onclick="document.getElementById('newsbox').scrollIntoView({behavior:'smooth'});return false">se alle nyheder ↓</a></p>` : ''}
+
+    ${briefSec('Vigtige opgaver i dag', briefTasks.length, briefTasks.slice(0,CAP).map(k=>briefRow(
+      `${k.title}${k.trips?` <span class="muted">${k.trips.ref_no}</span>`:''}`, overdueWhen(k), k.trip_id?`viewTrip('${k.trip_id}')`:''
+    )).concat(briefTasks.length>CAP?[`<p class="brief-more">+ ${briefTasks.length-CAP} flere under Salg/Økonomi</p>`]:[]))}
+
+    ${briefSec('Betalinger til forfald', briefPays.length, briefPays.slice(0,CAP).map(k=>briefRow(
+      `${k.title}${k.trips?` <span class="muted">${k.trips.ref_no}</span>`:''}`, overdueWhen(k), k.trip_id?`viewTrip('${k.trip_id}')`:''
+    )).concat(briefPays.length>CAP?[`<p class="brief-more">+ ${briefPays.length-CAP} flere under Økonomi</p>`]:[]))}
+
+    ${briefSec('Mails der venter på svar', mailF.length, mailF.slice(0,CAP).map(m=>briefRow(
+      `<b>${m.from||''}</b> — ${m.subject||''}${m.why?`<br><span class="muted">${m.why}</span>`:''}`, '', ''
+    )))}
+
+    ${briefSec('Kundebevægelser i dag', 0, moveF.map(m=>briefRow(m,'','')))}
+
+    ${briefSec('Nye salg siden i går', pulseF.length, pulseF.map(p=>briefRow(p.text||'','','')))}
+
+    ${isAdmin && revToday>0 ? `<div class="brief-sec"><p class="brief-sec-h">Omdannet til faktisk indtægt i dag</p>
+      <div class="brief-rev"><b>${krFull(revToday)}</b><span class="muted">${depToday.length} afrejse${depToday.length===1?'':'r'}${revRas&&revWen?` · Rasmus ${krFull(revRas)} · Wendie ${krFull(revWen)}`:''}</span></div></div>` : ''}
+
+    ${!brief && !briefTasks.length && !briefPays.length ? `<p class="brief-empty">Din brief lander automatisk kl. 6 hver morgen — der er ikke skrevet en endnu i dag.</p>` : (brief && !brief.top_line && !briefTasks.length && !briefPays.length && !mailF.length && !moveF.length && !pulseF.length ? `<p class="brief-empty">Roligt på kontoret i dag — ingen forfaldne opgaver, betalinger eller bevægelser.</p>` : '')}
+  </div>
+
+  <div class="grid g6" style="margin-bottom:12px">
+    <div class="kpi">${delta(wkD)}<b>${depToday.length+depWeek.length}</b><span>afrejser 7 dage</span><i class="tip">?</i><span class="tipbox"><b>Afrejser 7 dage.</b> Hvor mange rejser der letter i dag og i løbet af de næste 7 dage. Den lille pil viser om det er flere (▲) eller færre (▼) end ugen før.</span></div>
+    <div class="kpi"><b>${paxOut}</b><span>gæster ude nu</span><i class="tip">?</i><span class="tipbox"><b>Gæster ude nu.</b> Hvor mange gæster der er ude at rejse lige nu — de er taget afsted, men ikke kommet hjem endnu.</span></div>
+    <div class="kpi"><b>${kr(mSum)}</b><span>salg afrejser md.</span><i class="tip">?</i><span class="tipbox"><b>Salg afrejser måned.</b> Hvor meget de rejser, der letter i denne måned, er solgt for tilsammen. Det tæller efter hvornår folk rejser — ikke hvornår de har booket eller betalt.</span></div>
+    <div class="kpi"><b>${kr(ytdSum)}</b><span>omsætning ÅTD</span><i class="tip">?</i><span class="tipbox"><b>Omsætning år til dato.</b> Hvad vi har solgt for i år på de rejser, der allerede er lettet — fra 1. januar til i dag. Afbestilte rejser er ikke med. Det er salgsprisen, ikke det bogførte tal fra e-conomic.</span></div>
+    <div class="kpi"><b>${kr(pipeline)}</b><span>pipeline</span><i class="tip">?</i><span class="tipbox"><b>Pipeline.</b> Hvad vi allerede har solgt, men som endnu ikke er rejst — alle kommende rejser fra i dag og frem. Penge på vej ind.</span></div>
+    <div class="kpi ${tasksDue.length?'warn':''}"><b>${tasksDue.length}</b><span>opgaver forfald</span><i class="tip">?</i><span class="tipbox"><b>Opgaver forfald.</b> Åbne opgaver hvis frist er i dag eller overskredet. Se kortet «Deadline-vagthund» nedenfor for hvem der har ansvaret.</span></div>
+  </div>
+
+  <div class="grid" style="grid-template-columns:1fr 1fr;margin-bottom:12px">
+    <div class="agent" onclick="viewSales()" style="cursor:pointer"><div class="nm">Deadline-vagthund</div><div class="st"><span class="dot ${tasksDue.length?'alarm':'ok'}"></span>${tasksDue.length?tasksDue.length+' til forfald':'Alt ajour'}</div><div class="info">${dueOwners.length?'Ansvar: '+dueOwners.join(', ')+' · ':''}${rk.filter(k=>k.due_date>t0&&k.due_date<=t7).length} opgaver næste 7 dage</div><i class="tip">?</i><span class="tipbox"><b>Deadline-vagthund.</b> Holder øje med opgaver der har en frist. Rød prik = noget er overskredet. «Ansvar» viser hvem der skal tage sig af de overskredne opgaver. Klik for at åbne opgavelisten.</span></div>
+    <div class="agent" onclick="viewFinance()" style="cursor:pointer"><div class="nm">Betalingsvagt · kun forfaldne</div><div class="st"><span class="dot ${payOverdue?'alarm':'ok'}"></span>${payOverdue?payOverdue+' betaling'+(payOverdue>1?'er':'')+' overskredet':'Alt betalt til tiden'}</div><div class="info">${custOverdue.length} fra kunder · ${vpOverdue.length} til leverandører${vpOverdue.length?' ('+kr(vpOverdueSum)+')':''}</div><i class="tip">?</i><span class="tipbox"><b>Betalingsvagt.</b> Viser kun betalinger der er overskredet: restbetalinger vi mangler <b>fra</b> kunder, og regninger vi skulle have betalt <b>til</b> leverandører. Beløbet i parentes er summen vi skylder leverandørerne. Klik for at åbne Økonomi.</span></div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px">
+    <h3>I brug i dag — hvem er hvor <span class="r muted">${new Date().toLocaleDateString('da-DK',{day:'numeric',month:'short'})} · ${tripsInUse} rejser aktive · ${sharedEls} delte hoteller/fly</span></h3>
+    ${inUse.length ? `<div class="inuse">`+inUse.map(g=>{const shared=g.tripIds.length>1;
+      return `<div class="inuse-row${shared?' shared':''}">
+        <div class="il"><span class="eltag t-${g.type}">${EL_TAG[g.type]||g.type}</span> <b>${g.label}</b>${shared?`<span class="sharedbadge">delt · ${g.tripIds.length} kunder</span>`:''}</div>
+        <div class="ir">${g.rows.map(r=>`<a class="cust" href="#" onclick="viewTrip('${r.trips.id}');return false">${r.trips.customers.last_name}, ${r.trips.customers.first_name} <span class="muted">${r.trips.ref_no} · ${fmtD(r.start_date)}${r.end_date?'–'+fmtD(r.end_date):''}</span></a>`).join('')}</div>
+      </div>`;}).join('')+`</div>` : '<p class="muted">Ingen hoteller, fly eller transfers i brug i dag.</p>'}
+  </div>
+
+  <div class="grid g2">
+    <div>
+      <div class="card" id="newsbox"><h3>Nyheder — de 5 vigtigste lige nu ${brief?`<span class="r muted">pr. ${fmtD(brief.briefing_date)}</span>`:''}</h3>
+        ${brief?`<div class="news">${brief.items.map((n,i)=>`<div class="item"><span class="num">${i+1}</span>
+          <span style="flex:1"><a class="hl" href="${n.url}" target="_blank" rel="noopener">${n.headline}</a>
+          <p>${n.summary}</p><span class="src">${n.source} ↗</span></span></div>`).join('')}</div>`:'<p class="muted">Ingen briefing i dag.</p>'}
+      </div>
+      <div class="card"><h3>Afrejser — i dag & denne uge</h3>${[...depToday,...depWeek].map(tripRow).join('')||'<p class="muted">Ingen.</p>'}</div>
+      <div class="card"><h3>Ude at rejse nu</h3>${outNow.map(tripRow).join('')||'<p class="muted">Ingen.</p>'}</div>
+      <div class="card"><h3>På vej hjem — i dag & i morgen</h3>${homeSoon.map(tripRow).join('')||'<p class="muted">Ingen.</p>'}</div>
+    </div>
+    <div>
+      <div class="card"><h3>Dagens opgaver <span class="r"><a href="#" onclick="viewSales();return false">salg</a> · <a href="#" onclick="viewFinance();return false">økonomi</a></span></h3>
+        ${rk.slice(0,12).map(k=>taskLine(k,'viewDash')).join('')||'<p class="muted">Alt er ajour.</p>'}
+        ${rk.length>12?`<p class="muted center" style="margin:6px 0 0">+ ${rk.length-12} flere under Salg/Økonomi</p>`:''}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ═══ SALG ═══
+async function viewSales(){
+  navTo('sales');
+  app.innerHTML = '<div class="pagehead"><h2>Salg</h2></div><div class="card">Henter…</div>';
+  const [trips, tasks] = await Promise.all([
+    fetchTrips(),
+    db.from('tasks').select('*, trips(ref_no)').eq('status','aaben').in('task_type',SALES_TASKS).order('due_date').then(r=>r.data||[])
+  ]);
+  window._trips = trips;
+  const t0 = today();
+  app.innerHTML = `
+  <div class="pagehead"><h2>Salg</h2><span class="sub">rejser & processen efter salg</span>
+    <span style="margin-left:auto"><button class="btn gold" onclick="viewNew()">＋ Ny rejse</button></span></div>
+  <div class="grid g4" style="margin-bottom:12px">
+    <div class="kpi"><b>${trips.filter(active).length}</b><span>rejser 2026→</span></div>
+    <div class="kpi"><b>${trips.filter(t=>active(t)&&t.departure_date>=t0).length}</b><span>kommende afrejser</span></div>
+    <div class="kpi"><b>${trips.filter(t=>t.status==='god_tur').length}</b><span>ude nu</span></div>
+    <div class="kpi ${tasks.filter(k=>k.due_date<=t0).length?'warn':''}"><b>${tasks.length}</b><span>salgsopgaver åbne</span></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>Alle rejser <span class="seg" id="statusseg">
+      <button data-f="upcoming" class="on">Kommende</button><button data-f="all">Alle</button><button data-f="done">Gennemført</button><button data-f="canx">Afbestilt</button></span></h3>
+      <input id="q" placeholder="Søg navn eller ref.nr. …" style="max-width:300px;margin-bottom:8px">
+      <div id="triplist"></div></div>
+    <div class="card"><h3>Salgsopgaver — tjek, pre-departure, god tur, hjemkomst</h3>
+      ${tasks.map(k=>taskLine(k,'viewSales')).join('')||'<p class="muted">Ingen åbne salgsopgaver.</p>'}</div>
+  </div>`;
+  let f='upcoming';
+  const draw = () => {
+    const q = ($('#q').value||'').toLowerCase();
+    let rows = window._trips.filter(t =>
+      f==='all' ? true :
+      f==='upcoming' ? (active(t)&&t.departure_date>=t0) :
+      f==='done' ? t.status==='faerdig' : t.status==='canx');
+    rows = rows.filter(t=>!q||(t.ref_no+' '+t.customers.first_name+' '+t.customers.last_name).toLowerCase().includes(q));
+    rows.sort((a,b)=>a.departure_date.localeCompare(b.departure_date));
+    $('#triplist').innerHTML = `<table><tr><th>Ref</th><th>Kunde</th><th>Destination</th><th>Afrejse</th><th class="r">Pax</th><th class="r">Salg DKK</th><th>Status</th></tr>`+
+      rows.map(t=>`<tr class="click" onclick="viewTrip('${t.id}')"><td><b>${t.ref_no}</b></td>
+        <td>${t.customers.last_name}, ${t.customers.first_name}</td>
+        <td>${t.trip_destinations.map(d=>d.destination).join(' + ')}</td>
+        <td>${fmtDY(t.departure_date)}</td><td class="r">${t.pax_count}</td>
+        <td class="r">${t.package_sell_dkk?Math.round(t.package_sell_dkk).toLocaleString('da-DK'):'—'}</td>
+        <td><span class="badge ${t.status}">${STATUS_LABELS[t.status]}</span></td></tr>`).join('')+'</table>'+(rows.length?'':'<p class="muted">Ingen rejser matcher.</p>');
+  };
+  document.querySelectorAll('#statusseg button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#statusseg button').forEach(x=>x.classList.remove('on'));b.classList.add('on');f=b.dataset.f;draw();});
+  $('#q').oninput = draw;
+  draw();
+}
+
+// ═══ ØKONOMI ═══
+async function viewFinance(){
+  navTo('finance');
+  app.innerHTML = '<div class="pagehead"><h2>Økonomi</h2></div><div class="card">Henter…</div>';
+  const [trips, tasks] = await Promise.all([
+    fetchTrips(),
+    db.from('tasks').select('*, trips(ref_no)').eq('status','aaben').in('task_type',FIN_TASKS).order('due_date').then(r=>r.data||[])
+  ]);
+  await vpLoadRecon();
+  const vpWaiting=Object.values(VP_RECON).filter(r=>r.status==='betalt_mangler_afstemning');
+  const t0=today();
+  const t30_=plusDays(30);
+  window.VP_REFMAP={}; trips.forEach(t=>{ VP_REFMAP[t.ref_no]=t.id; VP_REFMAP[String(t.ref_no).replace(/^[A-Za-z]+/,'')]=t.id; VP_REFMAP[t.branch+String(t.ref_no).replace(/^[A-Za-z]+/,'')]=t.id; });
+  const vpDue=VENDOR_PAYMENTS.filter(p=>p.dkk>0 && p.due && p.due<=t30_);
+  const vpOverdue=VENDOR_PAYMENTS.filter(p=>p.dkk>0 && p.due && p.due<=t0);
+  const vpCredDkk=VENDOR_PAYMENTS.filter(p=>p.dkk<0).reduce((s,p)=>s+p.dkk,0);
+  const y = trips.filter(t=>active(t)&&t.departure_date>='2026-01-01'&&t.departure_date<='2026-12-31');
+  const sum=(a,f)=>a.reduce((s,t)=>s+ +(t[f]||0),0);
+  const sell=sum(y,'package_sell_dkk'), buy=sum(y,'buy_dkk'), db_=sum(y,'comm_dkk');
+  const rest = tasks.filter(k=>k.task_type==='restbetaling');
+  const lev = tasks.filter(k=>k.task_type==='leverandoerbetaling');
+  const byM = {};
+  y.forEach(t=>{const m=+t.departure_date.slice(5,7)-1;byM[m]=byM[m]||{sell:0,db:0,mn:0,md:0,n:0};byM[m].sell+= +(t.package_sell_dkk||0);byM[m].db+= +(t.comm_dkk||0);byM[m].n++;byM[m][t.branch==='MN'?'mn':'md']+= +(t.package_sell_dkk||0);});
+  const maxM = Math.max(...Object.values(byM).map(x=>x.sell),1);
+  const brs = {};
+  y.forEach(t=>{const b=t.branch;brs[b]=brs[b]||{n:0,pax:0,sell:0,buy:0,db:0};brs[b].n++;brs[b].pax+=t.pax_count;brs[b].sell+= +(t.package_sell_dkk||0);brs[b].buy+= +(t.buy_dkk||0);brs[b].db+= +(t.comm_dkk||0);});
+  app.innerHTML = `
+  <div class="pagehead"><h2>Økonomi</h2>${finSubtabs('oversigt')}<span class="sub" style="margin-left:auto">2026 · afstemt 1:1 mod Dolphin-rapport 12. jul</span></div>
+  <div class="grid g6" style="margin-bottom:12px">
+    <div class="kpi"><b>${kr(sell)}</b><span>omsætning 2026</span></div>
+    <div class="kpi"><b>${kr(buy)}</b><span>direkte omk.</span></div>
+    <div class="kpi"><b>${kr(db_)}</b><span>dækningsbidrag</span></div>
+    <div class="kpi"><b>${pct(db_,sell)}</b><span>dækningsgrad</span></div>
+    <div class="kpi ${vpOverdue.length?'warn':''}"><b>${vpDue.length}</b><span>lev.betalinger ≤30 dg</span></div>
+    <div class="kpi"><b>${vpWaiting.length}</b><span>mangler afstemning</span></div>
+  </div>
+  <div class="grid g2">
+    <div>
+      <div class="card"><h3>Omsætning & DB pr. måned (afrejse) <span class="r mini">■ guld = MN · ■ blågrøn = MD/øvrige</span></h3>
+        <table>${MDR.map((m,i)=>{const d=byM[i];if(!d)return '';return `<tr><td style="width:34px">${m}</td>
+          <td><div class="bar"><i style="width:${100*d.mn/maxM}%"></i></div><div class="bar" style="margin-top:2px"><i class="sea" style="width:${100*d.md/maxM}%"></i></div></td>
+          <td class="r" style="width:86px">${kr(d.sell)}</td><td class="r muted" style="width:120px">DB ${kr(d.db)} · ${pct(d.db,d.sell)}</td><td class="r muted" style="width:58px">${d.n} rejser</td></tr>`;}).join('')}</table></div>
+      <div class="card"><h3>Pr. branch — 2026</h3>
+        <table><tr><th>Branch</th><th class="r">Rejser</th><th class="r">Pax</th><th class="r">Omsætning</th><th class="r">DB</th><th class="r">DG %</th><th class="r">Snit/rejse</th></tr>
+        ${Object.entries(brs).sort((a,b)=>b[1].sell-a[1].sell).map(([b,d])=>`<tr><td><b>${b}</b>${b==='MN'?' · Norge':b==='MD'?' · Danmark':''}</td>
+          <td class="r">${d.n}</td><td class="r">${d.pax}</td><td class="r">${kr(d.sell)}</td><td class="r">${kr(d.db)}</td><td class="r">${pct(d.db,d.sell)}</td><td class="r">${kr(d.sell/d.n)}</td></tr>`).join('')}</table></div>
+      <div class="card"><h3>Kommer med skive 2</h3><p class="muted">Ind-/udbetalinger m/konto & kurs, bankmatch, kreditregister, likviditetsprognose pr. konto/valuta, bogføringspakken med ét klik, e-conomic-synk. Tallene ovenfor er salgs- og margindata fra Dolphin-importen.</p></div>
+    </div>
+    <div>
+      <div class="card" style="border-color:var(--gold)"><h3>Leverandørbetalinger <span class="r"><a href="#" onclick="viewVendorPay();return false">åbn siden →</a></span></h3>
+        <p class="muted" style="margin:0 0 4px">${vpDue.length} til forfald ≤30 dg · <span class="${vpOverdue.length?'overdue':''}">${vpOverdue.length} forfaldne</span> · ${vpWaiting.length} betalt/mangler afstemning · ${kr(Math.abs(vpCredDkk))} i kreditter til gode.</p>
+        <button class="btn ghost" style="margin-top:8px" onclick="viewVendorPay()">Åbn leverandørbetalinger →</button></div>
+      <div class="card"><h3>Restbetalinger fra kunder <span class="r ${rest.some(k=>k.due_date<=t0)?'overdue':'muted'}">${rest.filter(k=>k.due_date<=t0).length} overskredet</span></h3>
+        ${rest.map(k=>taskLine(k,'viewFinance')).join('')||'<p class="muted">Ingen åbne (oprettes fra rejsernes restforfald).</p>'}</div>
+    </div>
+  </div>`;
+}
+
+// ═══ LEVERANDØRBETALINGER · afstemning (betalt → mangler afstemning → afstemt) ═══
+window.VP_RECON = window.VP_RECON||{};
+function vpKey(p){ return p.branch+'|'+p.folder+'|'+p.vendor+'|'+p.due+'|'+Math.round(p.dkk); }
+function vpStatus(p){ const r=VP_RECON[vpKey(p)]; return r?r.status:'aaben'; }
+function vpStatusSelect(i,st){ const o=(v,l)=>`<option value="${v}" ${st===v?'selected':''}>${l}</option>`;
+  return `<select class="vpsel vp-${st}" onclick="event.stopPropagation()" onchange="event.stopPropagation();vpSetStatus(${i},this.value)">${o('aaben','Ubetalt')}${o('betalt_mangler_afstemning','Betalt · mangler afstemning')}${o('afstemt','Afstemt')}</select>`; }
+async function vpSetStatus(i,val){ const p=VENDOR_PAYMENTS[i]; if(!p)return; const key=vpKey(p); const now=new Date().toISOString(); const who=vpWho();
+  if(val==='aaben'){ const {error}=await db.from('vendor_payment_recon').delete().eq('pay_key',key); if(error){alert('Kunne ikke gemme: '+error.message);return;} }
+  else { const ex=VP_RECON[key]||{}; const row={pay_key:key,branch:p.branch,folder:p.folder,vendor:p.vendor,pax:p.pax,product:p.product,due:p.due,vendor_amt:p.vendorAmt,cur:p.cur,dkk:p.dkk,status:val,updated_at:now,
+      paid_by:ex.paid_by||who, paid_at:ex.paid_at||now,
+      reconciled_by: val==='afstemt'?(ex.reconciled_by||who):null,
+      reconciled_at: val==='afstemt'?(ex.reconciled_at||now):null };
+    const {error}=await db.from('vendor_payment_recon').upsert(row); if(error){alert('Kunne ikke gemme: '+error.message);return;} }
+  await vpLoadRecon(); viewVendorPay(); }
+async function vpLoadRecon(){ try{ const {data}=await db.from('vendor_payment_recon').select('*'); window.VP_RECON={}; (data||[]).forEach(r=>VP_RECON[r.pay_key]=r); }catch(e){ window.VP_RECON=window.VP_RECON||{}; } }
+function vpWho(){ return window.ME || (typeof session!=='undefined'&&session&&session.user?session.user.email:''); }
+async function vpMarkPaid(i){ const p=VENDOR_PAYMENTS[i]; const {error}=await db.from('vendor_payment_recon').upsert({pay_key:vpKey(p),branch:p.branch,folder:p.folder,vendor:p.vendor,pax:p.pax,product:p.product,due:p.due,vendor_amt:p.vendorAmt,cur:p.cur,dkk:p.dkk,status:'betalt_mangler_afstemning',paid_by:vpWho(),paid_at:new Date().toISOString(),reconciled_by:null,reconciled_at:null,updated_at:new Date().toISOString()}); if(error){alert('Kunne ikke gemme: '+error.message);return;} await vpLoadRecon(); viewVendorPay(); }
+async function vpUndoPaid(i){ const p=VENDOR_PAYMENTS[i]; const {error}=await db.from('vendor_payment_recon').delete().eq('pay_key',vpKey(p)); if(error){alert(error.message);return;} await vpLoadRecon(); viewVendorPay(); }
+async function vpMarkReconQ(qi){ const r=(window.VP_QUEUE||[])[qi]; if(!r)return; const {error}=await db.from('vendor_payment_recon').update({status:'afstemt',reconciled_by:vpWho(),reconciled_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('pay_key',r.pay_key); if(error){alert('Kunne ikke gemme: '+error.message);return;} await vpLoadRecon(); viewVendorPay(); }
+function vpStatusBadge(st){ if(st==='afstemt') return '<span class="badge" style="background:var(--ok)">afstemt</span>'; if(st==='betalt_mangler_afstemning') return '<span class="badge bb_sendt">afventer afstemning</span>'; return ''; }
+function emiliaQueueCard(){
+  window.VP_QUEUE = Object.values(VP_RECON).filter(r=>r.status==='betalt_mangler_afstemning').sort((a,b)=>(a.paid_at||'').localeCompare(b.paid_at||''));
+  const q=window.VP_QUEUE; const sumDkk=q.reduce((s,r)=>s+ +(r.dkk||0),0);
+  return `<div class="card" style="border-color:var(--sea);background:#f8fbfa">
+    <h3 style="color:#3f7d74">✓ Betalt — mangler afstemning <span class="r">${q.length} til Emilie · ${fmtDkkR(sumDkk)}</span></h3>
+    ${q.length?`<table><tr><th>Markeret betalt</th><th>Leverandør · rejse</th><th class="r">Beløb</th><th class="r">DKK</th><th class="r">Afstemning</th></tr>
+      ${q.map((r,qi)=>`<tr><td class="mini" style="white-space:nowrap">${r.paid_at?fmtDY(r.paid_at.slice(0,10)):''}${r.paid_by?' · '+r.paid_by:''}</td>
+        <td><b style="color:var(--forest)">${vpName(r.vendor)}</b><div class="mini">${r.branch} ${r.folder} · ${r.pax||''}${r.product?' · '+r.product:''}</div></td>
+        <td class="r" style="white-space:nowrap;font-weight:600">${fmtFX(+r.vendor_amt,r.cur)}</td>
+        <td class="r mini" style="white-space:nowrap">${fmtDkkR(+r.dkk)}</td>
+        <td class="r">${vpStatusSelect((window.VP_KEY2IDX||{})[r.pay_key],r.status)}</td></tr>`).join('')}</table>`
+      :'<p class="muted">Ingen betalinger venter på afstemning. Når du markerer en leverandørbetaling som betalt nedenfor, dukker den op her — så Emilie kan afstemme den i det nye system.</p>'}
+  </div>`;
+}
+function finSubtabs(active){ return `<span class="seg" style="margin-left:14px">
+  <button class="${active==='oversigt'?'on':''}" onclick="viewFinance()">Oversigt</button>
+  <button class="${active==='lev'?'on':''}" onclick="viewVendorPay()">Leverandørbetalinger</button></span>`; }
+function vpCreditsCard(){
+  const creds=vpCredits(); const credTotDkk=creds.reduce((s,c)=>s+c.totalDkk,0);
+  if(!creds.length) return '';
+  return `<div class="card" style="border-color:var(--gold);background:#fffdf6">
+    <h3 style="color:#a3874e">⚑ Kreditter — husk at trække fra <span class="r" style="color:var(--ok)">${fmtDkkR(credTotDkk)}</span></h3>
+    ${creds.map(c=>{const nx=c.upcoming.find(u=>u.due>=today())||c.upcoming[0];const later=c.upcoming.filter(u=>u.due>=today()).length;return `<div class="el-item" style="border-color:#ecdfbf;background:#faf6ec">
+      <b>${vpName(c.vendor)}</b><span style="float:right;color:var(--ok);font-weight:700">${vpCurSum(c.credits)}</span>
+      <div class="muted" style="margin:3px 0 0">Kredit fra: ${c.credits.map(x=>x.branch+' '+x.folder+' · '+x.pax).join(' &nbsp;·&nbsp; ')}</div>
+      ${nx?`<div style="margin-top:6px;font-size:11.5px">→ træk fra næste betaling til ${vpName(c.vendor)}: <b>${nx.branch} ${nx.folder} · ${nx.pax}</b> · ${fmtFX(nx.vendorAmt,nx.cur)} · forfald ${fmtDY(nx.due)}${later>1?` <span class="muted">(+${later-1} flere kommende)</span>`:''}</div>`:'<div class="muted" style="margin-top:6px">Ingen kommende betaling — kreditten står til gode.</div>'}
+    </div>`;}).join('')}
+    <p class="mini" style="margin:8px 0 0">Kredit = leverandøren skylder os. Tjek her før du betaler samme leverandør.</p></div>`;
+}
+function vpDbRow(r){
+  const i=(window.VP_KEY2IDX||{})[r.pay_key];
+  const stamp = r.status==='afstemt'
+     ? ((r.reconciled_at?fmtDY(r.reconciled_at.slice(0,10)):'')+(r.reconciled_by?' · '+r.reconciled_by:''))
+     : ((r.paid_at?fmtDY(r.paid_at.slice(0,10)):'')+(r.paid_by?' · '+r.paid_by:''));
+  const id=(window.VP_REFMAP||{})[r.branch+r.folder]||(window.VP_REFMAP||{})[r.folder]||null;
+  return `<tr class="${id?'click':''}" ${id?`onclick="viewTrip('${id}')"`:''}>
+    <td class="mini" style="white-space:nowrap">${stamp}</td>
+    <td><b style="color:var(--forest)">${vpName(r.vendor)}</b><div class="mini">${r.branch} ${r.folder} · ${r.pax||''}${r.product?' · '+r.product:''}</div></td>
+    <td class="r" style="white-space:nowrap;font-weight:600">${fmtFX(+r.vendor_amt,r.cur)}</td>
+    <td class="r mini" style="white-space:nowrap">${fmtDkkR(+r.dkk)}</td>
+    <td class="r">${i!=null?vpStatusSelect(i,r.status):''}</td></tr>`;
+}
+function vpStageCard(status,title,accent,emptyMsg,stampHdr){
+  const rows=Object.values(VP_RECON).filter(r=>r.status===status)
+     .sort((a,b)=> status==='afstemt' ? (b.reconciled_at||'').localeCompare(a.reconciled_at||'') : (a.paid_at||'').localeCompare(b.paid_at||''));
+  const sumDkk=rows.reduce((s,r)=>s+ +(r.dkk||0),0);
+  return `<div class="card" style="border-color:${accent}">
+    <h3 style="color:${accent}">${title} <span class="r">${rows.length} · ${fmtDkkR(sumDkk)}</span></h3>
+    ${rows.length?`<table><tr><th>${stampHdr}</th><th>Leverandør · rejse</th><th class="r">Beløb</th><th class="r">DKK</th><th class="r">Status</th></tr>
+      ${rows.map(vpDbRow).join('')}</table>`:`<p class="muted">${emptyMsg}</p>`}</div>`;
+}
+async function viewVendorPay(){
+  navTo('finance');
+  app.innerHTML = '<div class="pagehead"><h2>Økonomi</h2></div><div class="card">Henter leverandørbetalinger…</div>';
+  const [trips] = await Promise.all([ fetchTrips(), vpLoadRecon() ]);
+  window.VP_REFMAP={}; trips.forEach(t=>{ VP_REFMAP[t.ref_no]=t.id; VP_REFMAP[String(t.ref_no).replace(/^[A-Za-z]+/,'')]=t.id; VP_REFMAP[t.branch+String(t.ref_no).replace(/^[A-Za-z]+/,'')]=t.id; });
+  window.VP_KEY2IDX={}; VENDOR_PAYMENTS.forEach((p,i)=>{p._i=i; VP_KEY2IDX[vpKey(p)]=i;});
+  const t0=today(), t30=plusDays(30);
+  const open=VENDOR_PAYMENTS.filter(p=>p.dkk>0 && vpStatus(p)==='aaben');
+  const due=open.filter(p=>p.due && p.due<=t30);
+  const overdue=open.filter(p=>p.due && p.due<=t0);
+  const waiting=Object.values(VP_RECON).filter(r=>r.status==='betalt_mangler_afstemning');
+  const credDkk=VENDOR_PAYMENTS.filter(p=>p.dkk<0).reduce((s,p)=>s+p.dkk,0);
+  app.innerHTML = `
+  <div class="pagehead"><h2>Økonomi</h2>${finSubtabs('lev')}<span class="sub" style="margin-left:auto">Dolphin · Vendor Payments Due · 13. jul 2026</span></div>
+  <div class="grid g4" style="margin-bottom:12px">
+    <div class="kpi ${overdue.length?'warn':''}"><b>${due.length}</b><span>ubetalte ≤30 dg</span></div>
+    <div class="kpi ${overdue.length?'warn':''}"><b>${overdue.length}</b><span>forfaldne nu</span></div>
+    <div class="kpi"><b>${waiting.length}</b><span>mangler afstemning</span></div>
+    <div class="kpi"><b>${kr(Math.abs(credDkk))}</b><span>kreditter til gode</span></div>
+  </div>
+  ${vpCreditsCard()}
+  <div class="card"><h3>① Til forfald — ikke betalt endnu <span class="seg"><button id="vpb-open" class="on" onclick="renderVP('open')">Til forfald ≤30 dg</button><button id="vpb-all" onclick="renderVP('all')">Alle ubetalte</button></span></h3><div id="vpwrap"></div></div>
+  ${vpStageCard('betalt_mangler_afstemning','② Betalt · mangler afstemning — til Emilie','var(--gold)','Ingen betalinger venter på afstemning. Sæt en linje ovenfor til «Betalt · mangler afstemning», så lander den her.','Markeret betalt')}
+  ${vpStageCard('afstemt','③ Afstemt — færdig','var(--ok)','Ingen afstemte endnu.','Afstemt')}`;
+  renderVP('open');
+}
+
+// ═══ MARKEDSFØRING ═══
+async function viewMarketing(){
+  navTo('marketing');
+  app.innerHTML = '<div class="pagehead"><h2>Markedsføring</h2></div><div class="card">Analyserer…</div>';
+  const trips = (await fetchTrips()).filter(active);
+  const y = trips.filter(t=>t.departure_date>='2026-01-01');
+  const sum=(a,f)=>a.reduce((s,t)=>s+ +(t[f]||0),0);
+  const dest={};
+  y.forEach(t=>t.trip_destinations.forEach(d=>{const k=d.destination;dest[k]=dest[k]||{n:0,pax:0,sell:0,db:0};dest[k].n++;dest[k].pax+=t.pax_count;dest[k].sell+= +(t.package_sell_dkk||0);dest[k].db+= +(t.comm_dkk||0);}));
+  const dmax = Math.max(...Object.values(dest).map(d=>d.sell),1);
+  const lt = y.filter(t=>t.booking_date).map(t=>({t, days: Math.round((new Date(t.departure_date)-new Date(t.booking_date))/86400000)}));
+  const avg = a => a.length?Math.round(a.reduce((s,x)=>s+x.days,0)/a.length):0;
+  const buckets = [['0–30',lt.filter(x=>x.days<=30)],['31–60',lt.filter(x=>x.days>30&&x.days<=60)],['61–120',lt.filter(x=>x.days>60&&x.days<=120)],['121–240',lt.filter(x=>x.days>120&&x.days<=240)],['240+',lt.filter(x=>x.days>240)]];
+  const bmax = Math.max(...buckets.map(b=>b[1].length),1);
+  const bm={};
+  y.filter(t=>t.booking_date&&t.booking_date>='2025-07-01').forEach(t=>{const k=t.booking_date.slice(0,7);bm[k]=bm[k]||{n:0,sell:0};bm[k].n++;bm[k].sell+= +(t.package_sell_dkk||0);});
+  const bmKeys = Object.keys(bm).sort();
+  const bmMax = Math.max(...bmKeys.map(k=>bm[k].sell),1);
+  const seg = [['Par (2 pax)',y.filter(t=>t.pax_count===2)],['Familie (3–5)',y.filter(t=>t.pax_count>=3&&t.pax_count<=5)],['Gruppe (6+)',y.filter(t=>t.pax_count>=6)],['Solo (1)',y.filter(t=>t.pax_count===1)]];
+  const top = [...y].sort((a,b)=> +(b.package_sell_dkk||0) - +(a.package_sell_dkk||0)).slice(0,8);
+  const len = a => a.length?Math.round(a.reduce((s,t)=>s+(t.return_date?(new Date(t.return_date)-new Date(t.departure_date))/86400000:0),0)/a.length):0;
+  app.innerHTML = `
+  <div class="pagehead"><h2>Markedsføring</h2><span class="sub">mønstre & segmenter · ${y.length} rejser i 2026</span></div>
+  <div class="grid g6" style="margin-bottom:12px">
+    <div class="kpi"><b>${kr(sum(y,'package_sell_dkk')/Math.max(y.length,1))}</b><span>snit pr. rejse</span></div>
+    <div class="kpi"><b>${kr(sum(y,'package_sell_dkk')/Math.max(sum(y,'pax_count'),1))}</b><span>snit pr. pax</span></div>
+    <div class="kpi"><b>${avg(lt)} dage</b><span>booking → afrejse</span></div>
+    <div class="kpi"><b>${len(y)} dage</b><span>gns. rejselængde</span></div>
+    <div class="kpi"><b>${Object.keys(dest).length}</b><span>destinationer</span></div>
+    <div class="kpi"><b>${pct(seg[1][1].length,y.length)}</b><span>familieandel</span></div>
+  </div>
+  <div class="grid g2">
+    <div>
+      <div class="card"><h3>Destinationer — omsætning, margin & volumen</h3>
+        <table><tr><th>Destination</th><th></th><th class="r">Rejser</th><th class="r">Pax</th><th class="r">Omsætning</th><th class="r">DG %</th></tr>
+        ${Object.entries(dest).sort((a,b)=>b[1].sell-a[1].sell).map(([k,d])=>`<tr><td><b>${k}</b></td>
+          <td style="width:24%"><div class="bar"><i style="width:${100*d.sell/dmax}%"></i></div></td>
+          <td class="r">${d.n}</td><td class="r">${d.pax}</td><td class="r">${kr(d.sell)}</td><td class="r">${pct(d.db,d.sell)}</td></tr>`).join('')}</table></div>
+      <div class="card"><h3>Hvornår sælger vi? — salg pr. bookingmåned</h3>
+        <table>${bmKeys.map(k=>`<tr><td style="width:62px">${MDR[+k.slice(5,7)-1]} ${k.slice(2,4)}</td>
+          <td><div class="bar"><i class="forest" style="width:${100*bm[k].sell/bmMax}%"></i></div></td>
+          <td class="r" style="width:78px">${kr(bm[k].sell)}</td><td class="r muted" style="width:58px">${bm[k].n} salg</td></tr>`).join('')}</table>
+        <p class="muted" style="margin:8px 0 0">Kobles med UTM-kilder & kampagner, når pre-sale-data (R55) og Klaviyo kommer ind — så ses annonce → salg direkte.</p></div>
+    </div>
+    <div>
+      <div class="card"><h3>Booking lead time — hvor længe før bestilles der?</h3>
+        <table>${buckets.map(([l,a])=>`<tr><td style="width:70px">${l} dage</td>
+          <td><div class="bar"><i class="sea" style="width:${100*a.length/bmax}%"></i></div></td>
+          <td class="r" style="width:50px">${a.length}</td><td class="r muted" style="width:80px">${pct(a.length,lt.length)}</td></tr>`).join('')}</table>
+        <p class="mini" style="margin:8px 0 0">MN-snit: ${avg(lt.filter(x=>x.t.branch==='MN'))} dage · MD-snit: ${avg(lt.filter(x=>x.t.branch==='MD'))} dage → styrer, hvor tidligt kampagner for en rejseperiode skal starte.</p></div>
+      <div class="card"><h3>Segmenter</h3>
+        <table><tr><th>Segment</th><th class="r">Rejser</th><th class="r">Andel</th><th class="r">Snit ordre</th><th class="r">DG %</th></tr>
+        ${seg.map(([l,a])=>`<tr><td>${l}</td><td class="r">${a.length}</td><td class="r">${pct(a.length,y.length)}</td>
+          <td class="r">${a.length?kr(sum(a,'package_sell_dkk')/a.length):'—'}</td><td class="r">${pct(sum(a,'comm_dkk'),sum(a,'package_sell_dkk'))}</td></tr>`).join('')}</table></div>
+      <div class="card"><h3>Største bookinger 2026</h3>
+        ${top.map(t=>`<div class="list-item" onclick="viewTrip('${t.id}')"><span class="ic">◆</span>
+          <span><b style="color:var(--forest)">${t.customers.last_name}</b> <span class="muted">${t.ref_no} · ${t.trip_destinations.map(d=>d.destination).join(' + ')}</span></span>
+          <span class="when">${kr(t.package_sell_dkk)}</span></div>`).join('')}</div>
+    </div>
+  </div>`;
+}
+
+// ═══ RAPPORTER ═══════════════════════════════════════════════════════════
+// Udvidbar rapportmotor. Hver rapport returnerer et fælles format
+// {columns:[{key,label,type}], rows:[{...}], footer?:{...}} — samme format kan
+// senere fyldes af en fri rapportbygger, og genbruger eksportørerne nedenfor.
+// type: 'text' | 'num' (heltal) | 'kr' (DKK, 2 dec) | 'pct' | 'date'
+const REP_STATE = {id:null, from:'2026-01-01', to:'2026-12-31', last:null, uhtBranch:'ALL'};
+const activeRep = t => !['canx','voided'].includes(t.status);
+const inRange = (d,f,t) => d && d>=f && d<=t;
+const nRejser = a => a.length;
+
+// ═══ Udenrigshandel med tjenester (DST/Virk) ══════════════════════════════
+// DST bruger ISO alpha-2 landekoder (UHT-landeliste, jan. 2025). Destination → land.
+const UHT_LAND = {
+  'Maldiverne':'MV','Maldivene':'MV','Mauritius':'MU','Oman':'OM','Dubai':'AE','Abu Dhabi':'AE',
+  'Koh Samui':'TH','Phuket':'TH','Bangkok':'TH','Seychellerne':'SC','Singapore':'SG','Zanzibar':'TZ',
+  'Den Dominikanske Republik':'DO','Sri Lanka':'LK','Barbados':'BB','Bali':'ID','Grenada':'GD',
+  'Istanbul':'TR','Mexico':'MX'
+  // 'Karibia' = region, ikke ét land → føres som (mangler) og udelades af Virk-filen
+};
+const UHT_LANDNAVN = {MV:'Maldiverne',MU:'Mauritius',OM:'Oman',AE:'Forenede Arabiske Emirater',TH:'Thailand',
+  SC:'Seychellerne',SG:'Singapore',TZ:'Tanzania',DO:'Dominikanske Republik',LK:'Sri Lanka',BB:'Barbados',
+  ID:'Indonesien',GD:'Grenada',TR:'Tyrkiet',MX:'Mexico'};
+const UHT_TJENESTEKODE = '203.1'; // Rejserelaterede tjenester (logi, konferencer mv.)
+const uhtLand = dest => UHT_LAND[dest] || '';
+
+const REPORTS = [
+ {group:'Myndighedsindberetning', items:[
+  {id:'uht_virk', name:'Udenrigshandel med tjenester (Virk)', period:true, periodLabel:'Afrejse i perioden',
+   controls:()=>`<div><label>Omfang</label><select onchange="REP_STATE.uhtBranch=this.value;renderReport()">
+       <option value="ALL"${(REP_STATE.uhtBranch||'ALL')==='ALL'?' selected':''}>Alle afrejser (MD + MN)</option>
+       <option value="MD"${REP_STATE.uhtBranch==='MD'?' selected':''}>Kun MD</option>
+       <option value="MN"${REP_STATE.uhtBranch==='MN'?' selected':''}>Kun MN</option>
+     </select></div>`,
+   build:(trips,{from,to})=>{
+     const br=REP_STATE.uhtBranch||'ALL';
+     const inScope=t=>br==='ALL'?true:(br==='MD+HQ'?(t.branch==='MD'||t.branch==='HQ'):t.branch===br);
+     const y=trips.filter(t=>activeRep(t)&&inRange(t.departure_date,from,to)&&inScope(t));
+     const m={}, detail=[];
+     y.forEach(t=>{
+       const dest=((t.trip_destinations||[])[0]||{}).destination||'';
+       const code=uhtLand(dest);
+       const key=code||('?'+dest);
+       const ind=Math.round(+t.package_sell_dkk||0), udg=Math.round(+t.buy_dkk||0);
+       (m[key]=m[key]||{land:code,dest,ind:0,udg:0,n:0});
+       m[key].ind += ind; m[key].udg += udg; m[key].n++;
+       detail.push({land:code||'(mangler)',dest,ref:t.ref_no,branch:t.branch,kunde:kName(t),afrejse:t.departure_date,ind,udg});
+     });
+     detail.sort((a,b)=>(a.land+a.afrejse+a.ref).localeCompare(b.land+b.afrejse+b.ref));
+     const rows=Object.values(m).sort((a,b)=>b.udg-a.udg).map(v=>({
+       land:v.land||'(mangler)', landnavn:v.land?(UHT_LANDNAVN[v.land]||v.land):v.dest||'—',
+       kode:UHT_TJENESTEKODE, rejser:v.n, ind:v.ind, udg:v.udg}));
+     const tot=rows.reduce((s,r)=>({ind:s.ind+r.ind,udg:s.udg+r.udg,rejser:s.rejser+r.rejser}),{ind:0,udg:0,rejser:0});
+     const mangler=rows.filter(r=>r.land==='(mangler)').reduce((s,r)=>s+r.rejser,0);
+     return {columns:[['land','Oprindelsesland','text'],['landnavn','Land','text'],['kode','Tjenestekode','text'],['rejser','Rejser','num'],['ind','Indtægter','kr0'],['udg','Udgifter','kr0']].map(colObj),
+       rows, detail, footer:{land:'I alt',landnavn:'',kode:'',rejser:tot.rejser,ind:tot.ind,udg:tot.udg},
+       meta:'Hele kr. · afrejsedato · tjenestekode '+UHT_TJENESTEKODE+' (Rejserelaterede tjenester) · Indtægter = pakkesalg, Udgifter = indkøb hos leverandør · flerdest.-rejser føres på 1. destination'+(mangler?' · OBS: '+mangler+' rejse(r) uden landekode udelades af Virk-filen':'')};
+   }},
+ ]},
+ {group:'Økonomi & bogføring', items:[
+  {id:'oms_maaned', name:'Omsætning & margin pr. måned', period:true, periodLabel:'Afrejse i perioden',
+   build:(trips,{from,to})=>{
+     const y=trips.filter(t=>activeRep(t)&&inRange(t.departure_date,from,to));
+     const byM={}; y.forEach(t=>{const k=t.departure_date.slice(0,7);(byM[k]=byM[k]||{n:0,sell:0,buy:0,db:0,pax:0});byM[k].n++;byM[k].pax+=+t.pax_count||0;byM[k].sell+=+t.package_sell_dkk||0;byM[k].buy+=+t.buy_dkk||0;byM[k].db+=+t.comm_dkk||0;});
+     const rows=Object.keys(byM).sort().map(k=>{const d=byM[k];return {maaned:MDR[+k.slice(5,7)-1]+' '+k.slice(0,4),rejser:d.n,pax:d.pax,oms:d.sell,dok:d.buy,db:d.db,dg:d.sell?100*d.db/d.sell:0};});
+     const tot=rows.reduce((s,r)=>({rejser:s.rejser+r.rejser,pax:s.pax+r.pax,oms:s.oms+r.oms,dok:s.dok+r.dok,db:s.db+r.db}),{rejser:0,pax:0,oms:0,dok:0,db:0});
+     return {columns:[['maaned','Måned','text'],['rejser','Rejser','num'],['pax','Pax','num'],['oms','Omsætning','kr'],['dok','Direkte omk.','kr'],['db','Dækningsbidrag','kr'],['dg','DG %','pct']].map(colObj),
+       rows, footer:{maaned:'I alt',rejser:tot.rejser,pax:tot.pax,oms:tot.oms,dok:tot.dok,db:tot.db,dg:tot.oms?100*tot.db/tot.oms:0}};
+   }},
+  {id:'oms_branch', name:'Omsætning pr. branch', period:true, periodLabel:'Afrejse i perioden',
+   build:(trips,{from,to})=>{
+     const y=trips.filter(t=>activeRep(t)&&inRange(t.departure_date,from,to));
+     const b={}; y.forEach(t=>{const k=t.branch||'—';(b[k]=b[k]||{n:0,pax:0,sell:0,buy:0,db:0});b[k].n++;b[k].pax+=+t.pax_count||0;b[k].sell+=+t.package_sell_dkk||0;b[k].buy+=+t.buy_dkk||0;b[k].db+=+t.comm_dkk||0;});
+     const rows=Object.entries(b).sort((a,c)=>c[1].sell-a[1].sell).map(([k,d])=>({branch:k,rejser:d.n,pax:d.pax,oms:d.sell,dok:d.buy,db:d.db,dg:d.sell?100*d.db/d.sell:0,snit:d.n?d.sell/d.n:0}));
+     const tot=rows.reduce((s,r)=>({rejser:s.rejser+r.rejser,pax:s.pax+r.pax,oms:s.oms+r.oms,dok:s.dok+r.dok,db:s.db+r.db}),{rejser:0,pax:0,oms:0,dok:0,db:0});
+     return {columns:[['branch','Branch','text'],['rejser','Rejser','num'],['pax','Pax','num'],['oms','Omsætning','kr'],['dok','Direkte omk.','kr'],['db','Dækningsbidrag','kr'],['dg','DG %','pct'],['snit','Snit/rejse','kr']].map(colObj),
+       rows, footer:{branch:'I alt',rejser:tot.rejser,pax:tot.pax,oms:tot.oms,dok:tot.dok,db:tot.db,dg:tot.oms?100*tot.db/tot.oms:0,snit:tot.rejser?tot.oms/tot.rejser:0}};
+   }},
+  {id:'bogf_grundlag', name:'Bogføringsgrundlag (pr. rejse)', period:true, periodLabel:'Afrejse i perioden',
+   build:(trips,{from,to})=>{
+     const y=trips.filter(t=>activeRep(t)&&inRange(t.departure_date,from,to)).sort((a,b)=>(a.departure_date||'').localeCompare(b.departure_date||''));
+     const rows=y.map(t=>({ref:t.ref_no,branch:t.branch,kunde:kName(t),afrejse:t.departure_date,valuta:t.customer_currency||'DKK',oms:+t.package_sell_dkk||0,dok:+t.buy_dkk||0,db:+t.comm_dkk||0,dg:t.package_sell_dkk?100*(+t.comm_dkk)/(+t.package_sell_dkk):0}));
+     const tot=rows.reduce((s,r)=>({oms:s.oms+r.oms,dok:s.dok+r.dok,db:s.db+r.db}),{oms:0,dok:0,db:0});
+     return {columns:[['ref','Ref.nr.','text'],['branch','Branch','text'],['kunde','Kunde','text'],['afrejse','Afrejse','date'],['valuta','Valuta','text'],['oms','Omsætning DKK','kr'],['dok','Direkte omk. DKK','kr'],['db','DB DKK','kr'],['dg','DG %','pct']].map(colObj),
+       rows, footer:{ref:'I alt ('+rows.length+')',oms:tot.oms,dok:tot.dok,db:tot.db,dg:tot.oms?100*tot.db/tot.oms:0}};
+   }},
+  {id:'afbestillinger', name:'Afbestillinger', period:true, periodLabel:'Afbestilt i perioden',
+   build:(trips,{from,to})=>{
+     const y=trips.filter(t=>t.status==='canx'&&inRange(t.cancelled_at||t.departure_date,from,to))
+       .sort((a,b)=>((a.cancelled_at||'')+'').localeCompare((b.cancelled_at||'')+''));
+     const rows=y.map(t=>{const ret=+t.retained_dkk||0, loss=+t.loss_dkk||0, ref=+t.refund_dkk||0;
+       return {reff:t.ref_no,branch:t.branch,kunde:kName(t),afrejse:t.departure_date,afbestilt:t.cancelled_at,
+         indbet:ret+ref, tilbageholdt:ret, refusion:ref, tab:loss, netto:ret-loss};});
+     const tot=rows.reduce((s,r)=>({indbet:s.indbet+r.indbet,tilbageholdt:s.tilbageholdt+r.tilbageholdt,refusion:s.refusion+r.refusion,tab:s.tab+r.tab,netto:s.netto+r.netto}),{indbet:0,tilbageholdt:0,refusion:0,tab:0,netto:0});
+     return {columns:[['reff','Ref.nr.','text'],['branch','Branch','text'],['kunde','Kunde','text'],['afrejse','Afrejse','date'],['afbestilt','Afbestilt','date'],['indbet','Indbetalt','kr'],['tilbageholdt','Tilbageholdt','kr'],['refusion','Refusion','kr'],['tab','Leverandørtab','kr'],['netto','Netto','kr']].map(colObj),
+       rows, footer:{reff:'I alt ('+rows.length+')',tilbageholdt:tot.tilbageholdt,indbet:tot.indbet,refusion:tot.refusion,tab:tot.tab,netto:tot.netto},
+       meta:'Nettoresultat = tilbageholdt (indtægt) − leverandørtab (omkostning). Kreditnotaer føres separat i leverandørkredit-registeret · afbestilte rejser holdes ude af omsætningsrapporterne.'};
+   }},
+  {id:'lev_forfald', name:'Leverandørbetalinger — til forfald', period:false,
+   build:()=>{
+     const p=VENDOR_PAYMENTS.filter(x=>x.dkk>0).sort((a,b)=>(a.due||'').localeCompare(b.due||''));
+     const rows=p.map(x=>({folder:x.branch+x.folder,pax:x.pax,produkt:x.product,leverandoer:x.vendor,forfald:x.due,belob:x.vendorAmt,valuta:x.cur,dkk:x.dkk}));
+     const tot=rows.reduce((s,r)=>s+r.dkk,0);
+     return {columns:[['folder','Mappe','text'],['pax','Passager','text'],['produkt','Produkt','text'],['leverandoer','Leverandør','text'],['forfald','Forfald','date'],['belob','Beløb','num'],['valuta','Valuta','text'],['dkk','DKK','kr']].map(colObj),
+       rows, footer:{folder:'I alt ('+rows.length+')',dkk:tot}, meta:'Kilde: '+VP_META.source+' · importeret '+VP_META.report_date};
+   }},
+ ]},
+ {group:'Drift', items:[
+  {id:'solgte', name:'Solgte rejser i perioden', period:true, periodLabel:'Bookingdato i perioden',
+   build:(trips,{from,to})=>{
+     const y=trips.filter(t=>activeRep(t)&&inRange(t.booking_date,from,to)).sort((a,b)=>(a.booking_date||'').localeCompare(b.booking_date||''));
+     const rows=y.map(t=>({booket:t.booking_date,ref:t.ref_no,branch:t.branch,kunde:kName(t),dest:(t.trip_destinations||[]).map(d=>d.destination).join(' + '),pax:+t.pax_count||0,afrejse:t.departure_date,oms:+t.package_sell_dkk||0}));
+     const tot=rows.reduce((s,r)=>({pax:s.pax+r.pax,oms:s.oms+r.oms}),{pax:0,oms:0});
+     return {columns:[['booket','Booket','date'],['ref','Ref.nr.','text'],['branch','Branch','text'],['kunde','Kunde','text'],['dest','Destination','text'],['pax','Pax','num'],['afrejse','Afrejse','date'],['oms','Omsætning','kr']].map(colObj),
+       rows, footer:{booket:'I alt ('+rows.length+')',pax:tot.pax,oms:tot.oms}};
+   }},
+  {id:'afrejser', name:'Afrejser i perioden', period:true, periodLabel:'Afrejse i perioden',
+   build:(trips,{from,to})=>{
+     const y=trips.filter(t=>activeRep(t)&&inRange(t.departure_date,from,to)).sort((a,b)=>(a.departure_date||'').localeCompare(b.departure_date||''));
+     const rows=y.map(t=>({afrejse:t.departure_date,hjem:t.return_date,ref:t.ref_no,branch:t.branch,kunde:kName(t),dest:(t.trip_destinations||[]).map(d=>d.destination).join(' + '),pax:+t.pax_count||0,status:STATUS_LABELS[t.status]||t.status,oms:+t.package_sell_dkk||0}));
+     const tot=rows.reduce((s,r)=>({pax:s.pax+r.pax,oms:s.oms+r.oms}),{pax:0,oms:0});
+     return {columns:[['afrejse','Afrejse','date'],['hjem','Hjemkomst','date'],['ref','Ref.nr.','text'],['branch','Branch','text'],['kunde','Kunde','text'],['dest','Destination','text'],['pax','Pax','num'],['status','Status','text'],['oms','Omsætning','kr']].map(colObj),
+       rows, footer:{afrejse:'I alt ('+rows.length+')',pax:tot.pax,oms:tot.oms}};
+   }},
+ ]},
+ {group:'Statistik & marketing', items:[
+  {id:'destinationer', name:'Destinationer', period:true, periodLabel:'Afrejse i perioden',
+   build:(trips,{from,to})=>{
+     const y=trips.filter(t=>activeRep(t)&&inRange(t.departure_date,from,to));
+     const d={}; y.forEach(t=>(t.trip_destinations||[]).forEach(x=>{const k=x.destination;(d[k]=d[k]||{n:0,pax:0,sell:0,db:0});d[k].n++;d[k].pax+=+t.pax_count||0;d[k].sell+=+t.package_sell_dkk||0;d[k].db+=+t.comm_dkk||0;}));
+     const rows=Object.entries(d).sort((a,c)=>c[1].sell-a[1].sell).map(([k,v])=>({dest:k,rejser:v.n,pax:v.pax,oms:v.sell,db:v.db,dg:v.sell?100*v.db/v.sell:0}));
+     return {columns:[['dest','Destination','text'],['rejser','Rejser','num'],['pax','Pax','num'],['oms','Omsætning','kr'],['db','DB','kr'],['dg','DG %','pct']].map(colObj),
+       rows, meta:'Multi-destinationsrejser tælles i hver destination (R8).'};
+   }},
+  {id:'segmenter', name:'Kundesegmenter', period:true, periodLabel:'Afrejse i perioden',
+   build:(trips,{from,to})=>{
+     const y=trips.filter(t=>activeRep(t)&&inRange(t.departure_date,from,to));
+     const segs=[['Solo (1)',t=>t.pax_count==1],['Par (2)',t=>t.pax_count==2],['Familie (3–5)',t=>t.pax_count>=3&&t.pax_count<=5],['Gruppe (6+)',t=>t.pax_count>=6]];
+     const rows=segs.map(([l,f])=>{const a=y.filter(f);const sell=a.reduce((s,t)=>s+ +t.package_sell_dkk||0,0);const db=a.reduce((s,t)=>s+ +t.comm_dkk||0,0);return {segment:l,rejser:a.length,andel:y.length?100*a.length/y.length:0,snit:a.length?sell/a.length:0,oms:sell,dg:sell?100*db/sell:0};});
+     return {columns:[['segment','Segment','text'],['rejser','Rejser','num'],['andel','Andel','pct'],['snit','Snit ordre','kr'],['oms','Omsætning','kr'],['dg','DG %','pct']].map(colObj), rows};
+   }},
+  {id:'leadtime', name:'Booking lead time', period:true, periodLabel:'Afrejse i perioden',
+   build:(trips,{from,to})=>{
+     const y=trips.filter(t=>activeRep(t)&&inRange(t.departure_date,from,to)&&t.booking_date).map(t=>({d:Math.round((new Date(t.departure_date)-new Date(t.booking_date))/864e5),sell:+t.package_sell_dkk||0}));
+     const bk=[['0–30 dage',x=>x.d<=30],['31–60 dage',x=>x.d>30&&x.d<=60],['61–120 dage',x=>x.d>60&&x.d<=120],['121–240 dage',x=>x.d>120&&x.d<=240],['240+ dage',x=>x.d>240]];
+     const rows=bk.map(([l,f])=>{const a=y.filter(f);return {bucket:l,rejser:a.length,andel:y.length?100*a.length/y.length:0,oms:a.reduce((s,x)=>s+x.sell,0)};});
+     const snit=y.length?Math.round(y.reduce((s,x)=>s+x.d,0)/y.length):0;
+     return {columns:[['bucket','Lead time','text'],['rejser','Rejser','num'],['andel','Andel','pct'],['oms','Omsætning','kr']].map(colObj), rows, meta:'Gns. lead time: '+snit+' dage (booking → afrejse).'};
+   }},
+  {id:'bedste_kunder', name:'Bedste kunder', period:true, periodLabel:'Afrejse i perioden',
+   build:(trips,{from,to})=>{
+     const y=trips.filter(t=>activeRep(t)&&inRange(t.departure_date,from,to));
+     const k={}; y.forEach(t=>{const key=kName(t);(k[key]=k[key]||{n:0,pax:0,sell:0,db:0});k[key].n++;k[key].pax+=+t.pax_count||0;k[key].sell+=+t.package_sell_dkk||0;k[key].db+=+t.comm_dkk||0;});
+     const rows=Object.entries(k).sort((a,c)=>c[1].sell-a[1].sell).map(([key,v])=>({kunde:key,rejser:v.n,pax:v.pax,oms:v.sell,db:v.db}));
+     return {columns:[['kunde','Kunde','text'],['rejser','Rejser','num'],['pax','Pax','num'],['oms','Omsætning','kr'],['db','DB','kr']].map(colObj), rows};
+   }},
+ ]},
+ {group:'Leverandørbetalinger', items:[
+  {id:'lev_pr_leverandoer', name:'Pr. leverandør', period:false,
+   build:()=>{
+     const v={}; VENDOR_PAYMENTS.forEach(p=>{(v[p.vendor]=v[p.vendor]||{n:0,due:0,cred:0});v[p.vendor].n++;if(p.dkk>0)v[p.vendor].due+=p.dkk;else v[p.vendor].cred+=p.dkk;});
+     const rows=Object.entries(v).sort((a,c)=>c[1].due-a[1].due).map(([k,d])=>({leverandoer:k,poster:d.n,forfald:d.due,kredit:Math.abs(d.cred),netto:d.due+d.cred}));
+     const tot=rows.reduce((s,r)=>({forfald:s.forfald+r.forfald,kredit:s.kredit+r.kredit,netto:s.netto+r.netto}),{forfald:0,kredit:0,netto:0});
+     return {columns:[['leverandoer','Leverandør','text'],['poster','Poster','num'],['forfald','Til forfald DKK','kr'],['kredit','Kredit til gode DKK','kr'],['netto','Netto DKK','kr']].map(colObj),
+       rows, footer:{leverandoer:'I alt',forfald:tot.forfald,kredit:tot.kredit,netto:tot.netto}, meta:'Kilde: '+VP_META.source+' · '+VP_META.report_date};
+   }},
+  {id:'lev_kreditter', name:'Kreditter til gode', period:false,
+   build:()=>{
+     const p=VENDOR_PAYMENTS.filter(x=>x.dkk<0).sort((a,b)=>a.dkk-b.dkk);
+     const rows=p.map(x=>({folder:x.branch+x.folder,pax:x.pax,leverandoer:x.vendor,produkt:x.product,belob:x.vendorAmt,valuta:x.cur,dkk:x.dkk}));
+     return {columns:[['folder','Mappe','text'],['pax','Passager','text'],['leverandoer','Leverandør','text'],['produkt','Produkt','text'],['belob','Beløb','num'],['valuta','Valuta','text'],['dkk','DKK','kr']].map(colObj),
+       rows, footer:{folder:'I alt ('+rows.length+')',dkk:rows.reduce((s,r)=>s+r.dkk,0)}};
+   }},
+ ]},
+];
+function colObj(a){return {key:a[0],label:a[1],type:a[2]};}
+function kName(t){return t.customers?(t.customers.last_name+', '+t.customers.first_name):'—';}
+function findReport(id){for(const g of REPORTS)for(const it of g.items)if(it.id===id)return it;return null;}
+
+// —— formatering ——
+const fmtKr = n => (Math.round((+n||0)*100)/100).toLocaleString('da-DK',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtPct = n => (Math.round((+n||0)*10)/10).toLocaleString('da-DK',{minimumFractionDigits:1,maximumFractionDigits:1})+' %';
+const fmtNum = n => (+n||0).toLocaleString('da-DK');
+function fmtCell(v,type){ if(v==null||v==='')return ''; if(type==='kr')return fmtKr(v); if(type==='kr0')return fmtNum(Math.round(v)); if(type==='pct')return fmtPct(v); if(type==='num')return fmtNum(v); if(type==='date')return fmtDY(v); return String(v);}
+const rightAligned = type => type==='kr'||type==='kr0'||type==='pct'||type==='num';
+
+async function viewReports(){
+  navTo('reports');
+  app.innerHTML = '<div class="pagehead"><h2>Rapporter</h2></div><div class="card">Henter rejsedata…</div>';
+  window.REP_TRIPS = await fetchTrips();
+  if(!REP_STATE.id) REP_STATE.id = REPORTS[0].items[0].id;
+  drawReports();
+}
+function drawReports(){
+  const menu = REPORTS.map(g=>`<div class="rep-grp">${g.group}</div>`+g.items.map(it=>`<button class="rep-item ${it.id===REP_STATE.id?'on':''}" onclick="selectReport('${it.id}')">${it.name}</button>`).join('')).join('');
+  app.innerHTML = `
+  <div class="pagehead"><h2>Rapporter</h2><span class="sub">træk rapporter · gem som CSV, Excel eller PDF</span></div>
+  <div class="rep-layout">
+    <div class="rep-menu">${menu}</div>
+    <div id="repmain"></div>
+  </div>`;
+  renderReport();
+}
+function selectReport(id){ REP_STATE.id=id; drawReports(); }
+function onPeriodChange(){ REP_STATE.from=$('#rep_from').value; REP_STATE.to=$('#rep_to').value; renderReport(); }
+function setPeriod(from,to){ REP_STATE.from=from; REP_STATE.to=to; renderReport(); }
+
+function renderReport(){
+  const rep = findReport(REP_STATE.id); if(!rep) return;
+  const res = rep.build(window.REP_TRIPS||[], {from:REP_STATE.from, to:REP_STATE.to});
+  REP_STATE.last = {rep, res};
+  const periodUI = rep.period ? `
+    <div><label>Fra</label><input type="date" id="rep_from" value="${REP_STATE.from}" onchange="onPeriodChange()"></div>
+    <div><label>Til</label><input type="date" id="rep_to" value="${REP_STATE.to}" onchange="onPeriodChange()"></div>
+    <div><label>Hurtigvalg</label><select onchange="if(this.value)setPeriod(this.value.split('|')[0],this.value.split('|')[1])">
+      <option value="">…</option>
+      <option value="2026-01-01|2026-12-31">Hele 2026</option>
+      <option value="2026-01-01|2026-03-31">Q1 2026</option><option value="2026-04-01|2026-06-30">Q2 2026</option>
+      <option value="2026-07-01|2026-09-30">Q3 2026</option><option value="2026-10-01|2026-12-31">Q4 2026</option>
+      <option value="2025-01-01|2025-12-31">Hele 2025</option>
+    </select></div>` : '';
+  const cols = res.columns;
+  const th = cols.map(c=>`<th class="${rightAligned(c.type)?'num':''}">${c.label}</th>`).join('');
+  const body = res.rows.length ? res.rows.map(r=>`<tr>${cols.map(c=>`<td class="${rightAligned(c.type)?'num':''}">${fmtCell(r[c.key],c.type)}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${cols.length}" class="muted" style="padding:18px;text-align:center">Ingen rækker i det valgte interval.</td></tr>`;
+  const foot = res.footer ? `<tfoot><tr>${cols.map(c=>`<td class="${rightAligned(c.type)?'num':''}">${res.footer[c.key]!=null?fmtCell(res.footer[c.key],c.type):''}</td>`).join('')}</tr></tfoot>` : '';
+  const periodTxt = rep.period ? `${(rep.periodLabel||'Periode')}: ${fmtDY(REP_STATE.from)} – ${fmtDY(REP_STATE.to)}` : '';
+  $('#repmain').innerHTML = `
+    <div class="rep-toolbar">
+      ${periodUI}
+      ${rep.controls?rep.controls():''}
+      <div class="exp-btns">
+        ${rep.id==='uht_virk'?`<button class="btn gold" onclick="exportUHT()">Virk-fil (UHT Excel Line)</button>`:''}
+        <button class="btn ghost" onclick="exportCSV()">CSV</button>
+        <button class="btn ghost" onclick="exportXLSX()">Excel</button>
+        <button class="btn ${rep.id==='uht_virk'?'ghost':'gold'}" onclick="exportPDF()">PDF</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="print-only" style="margin-bottom:8px"><h2 style="margin:0" class="pf">Maldivia · ${rep.name}</h2><div style="font-size:11px;color:#666">${periodTxt}${periodTxt&&res.meta?' · ':''}${res.meta||''} · genereret ${fmtDY(today())}</div></div>
+      <h3 style="margin-top:0">${rep.name} <span class="r mini">${res.rows.length} rækker</span></h3>
+      ${periodTxt||res.meta?`<div class="rep-meta">${[periodTxt,res.meta].filter(Boolean).join(' · ')}</div>`:''}
+      <div style="overflow-x:auto"><table class="rep"><thead><tr>${th}</tr></thead><tbody>${body}</tbody>${foot}</table></div>
+    </div>
+    ${res.detail?detailCard(res.detail):''}`;
+}
+function detailCard(detail){
+  const grp={}; detail.forEach(d=>{(grp[d.land]=grp[d.land]||[]).push(d);});
+  const flag=d=>d.udg===0?' title="Ingen leverandøromkostning registreret" style="color:#b45309"':(d.ind<d.udg?' title="Indtægt < udgift (depositum/negativ margin?)" style="color:#b45309"':'');
+  const sec=Object.keys(grp).sort().map(land=>{
+    const ds=grp[land]; const si=ds.reduce((s,d)=>s+d.ind,0), su=ds.reduce((s,d)=>s+d.udg,0);
+    const navn=UHT_LANDNAVN[land]||land;
+    return `<tr class="rep-grp-row"><td colspan="6"><b>${land}</b> · ${navn} <span class="mini muted">(${ds.length} rejser)</span></td></tr>`+
+      ds.map(d=>`<tr${flag(d)}><td>${d.ref}</td><td>${d.branch}</td><td>${d.kunde}</td><td>${fmtDY(d.afrejse)}</td><td class="num">${fmtNum(d.ind)}</td><td class="num">${fmtNum(d.udg)}</td></tr>`).join('')+
+      `<tr class="rep-sub"><td colspan="4" class="num"><b>Subtotal ${land}</b></td><td class="num"><b>${fmtNum(si)}</b></td><td class="num"><b>${fmtNum(su)}</b></td></tr>`;
+  }).join('');
+  return `<div class="card"><h3 style="margin-top:0">Specifikation — rejser bag tallene <span class="r mini">${detail.length} afrejser</span></h3>
+    <div class="rep-meta">Hver linje = én rejse (afrejse i perioden). Beløb i hele kr. Gule linjer bør tjekkes: manglende udgift eller udgift &gt; indtægt.</div>
+    <div style="overflow-x:auto"><table class="rep"><thead><tr><th>Ref.nr.</th><th>Branch</th><th>Kunde</th><th>Afrejse</th><th class="num">Indtægter</th><th class="num">Udgifter</th></tr></thead><tbody>${sec}</tbody></table></div></div>`;
+}
+
+// —— eksportører (genbrugelige) ——
+function repFilename(ext){ const rep=REP_STATE.last.rep; const p=rep.period?`_${REP_STATE.from}_${REP_STATE.to}`:''; return `Maldivia_${rep.id}${p}.${ext}`; }
+function repMatrix(){ // [{columns,rows,footer}] -> AoA med rå tal (Excel-venligt)
+  const {rep,res}=REP_STATE.last; const cols=res.columns;
+  const header=cols.map(c=>c.label);
+  const rows=res.rows.map(r=>cols.map(c=>{const v=r[c.key]; if(v==null||v==='')return ''; if(c.type==='kr0')return Math.round(+v); if(c.type==='kr'||c.type==='num')return Math.round((+v)*100)/100; if(c.type==='pct')return Math.round((+v)*10)/10; return v;}));
+  const foot=res.footer?[cols.map(c=>{const v=res.footer[c.key]; if(v==null||v==='')return ''; if(c.type==='kr0')return Math.round(+v); if(c.type==='kr'||c.type==='num')return Math.round((+v)*100)/100; if(c.type==='pct')return Math.round((+v)*10)/10; return v;})]:[];
+  return {title:rep.name, header, rows, foot};
+}
+function exportCSV(){
+  const m=repMatrix();
+  const esc=v=>{ if(typeof v==='number')return String(v).replace('.',','); const s=String(v==null?'':v); return /[";\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; };
+  const lines=[m.header,...m.rows,...m.foot].map(r=>r.map(esc).join(';'));
+  const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+  downloadBlob(blob, repFilename('csv'));
+}
+function exportXLSX(){
+  const m=repMatrix();
+  const aoa=[[m.title],[],m.header,...m.rows,...m.foot];
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols']=m.header.map((h,i)=>({wch:Math.max(String(h).length+2, 12)}));
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Rapport');
+  XLSX.writeFile(wb, repFilename('xlsx'));
+}
+function exportPDF(){ window.print(); }
+function exportUHT(){ // DST "UHT Excel Line": Oprindelsesland | Tjenestekode | Indtægter | Udgifter · 1 headerlinje · hele kr.
+  const {res}=REP_STATE.last;
+  const header=['Oprindelsesland','Tjenestekode','Indtægter','Udgifter'];
+  const valid=res.rows.filter(r=>r.land && r.land!=='(mangler)');
+  const skl=res.rows.filter(r=>!r.land || r.land==='(mangler)').reduce((s,r)=>s+(+r.rejser||0),0);
+  const rows=valid.map(r=>[r.land, r.kode||'', Math.round(+r.ind||0), Math.round(+r.udg||0)]);
+  const ws=XLSX.utils.aoa_to_sheet([header,...rows]);
+  ws['!cols']=[{wch:14},{wch:12},{wch:14},{wch:14}];
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'UHT');
+  XLSX.writeFile(wb, `UHT_Virk_${REP_STATE.from}_${REP_STATE.to}.xlsx`);
+  if(skl) alert('OBS: '+skl+' rejse(r) uden gyldig landekode blev udeladt af filen. Ret destinationen på rejsen, eller tilføj landet i UHT_LAND-listen.');
+}
+function downloadBlob(blob,name){ const u=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=u; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),1500); }
+
+// ═══ REJSEDETALJE ═══
+window.onerror = m => { const c=document.createElement('div');c.className='card';c.style.borderColor='var(--bad)';c.textContent='Teknisk fejl: '+m;app.prepend(c); };
+async function viewTrip(id){
+  navTo('sales');
+  app.innerHTML = '<div class="card">Henter rejsen…</div>';
+  const fail=(hvor,e)=>{app.innerHTML=`<div class="card"><b style="color:var(--bad)">Fejl (${hvor}):</b> ${e.message}<br><br><button class="btn ghost" onclick="viewSales()">← Til Salg</button></div>`;};
+  const [r1,r2,r3,r4,r5,r6,r7] = await Promise.all([
+    db.from('trips').select('*, customers(first_name,last_name,email,phone)').eq('id',id).single(),
+    db.from('trip_destinations').select('destination').eq('trip_id',id).order('seq'),
+    db.from('trip_travelers').select('travelers(full_name,date_of_birth)').eq('trip_id',id),
+    db.from('trip_elements').select('*, suppliers:supplier_id(name)').eq('trip_id',id).order('start_date'),
+    db.from('tasks').select('*').eq('trip_id',id).order('due_date'),
+    db.from('suppliers').select('id,name').order('name'),
+    db.from('flight_invoices').select('*, flight_invoice_lines(*)').eq('trip_id',id).order('invoice_date',{ascending:true})
+  ]);
+  if(r1.error) return fail('rejse', r1.error);
+  if(r4.error) return fail('elementer', r4.error);
+  const t=r1.data; t.trip_destinations=r2.data||[]; t.trip_travelers=r3.data||[];
+  const els=r4.data; window.ELS=els||[]; const tasks=r5.data||[]; window.SUPS=r6.data||[]; window.TRIP=t;
+  const FINV = (r7&&r7.data)?r7.data:[];
+  const nexts = FLOW[FLOW.indexOf(t.status)+1];
+  app.innerHTML = `
+  <div class="pagehead"><h2>${t.ref_no}</h2><span class="sub">${t.customers.last_name}, ${t.customers.first_name}</span>
+    <span class="badge ${t.status}">${STATUS_LABELS[t.status]}</span>
+    <span style="margin-left:auto;display:inline-flex;gap:6px;align-items:center">
+      ${nexts?`<button class="btn gold" onclick="setStatus('${id}','${nexts}')">→ ${STATUS_LABELS[nexts]}</button>`:''}
+      <select class="btn ghost" title="Skift status – ret en forkert status" onchange="setStatusSel('${id}',this.value)" style="padding:6px 8px">
+        <option value="">Skift status…</option>
+        ${Object.entries(STATUS_LABELS).map(([k,v])=>`<option value="${k}" ${t.status===k?'disabled':''}>${v}${k==='canx'?' (via afbestillingsflow)':''}</option>`).join('')}
+      </select>
+      ${!['canx','voided'].includes(t.status)?`<button class="btn danger" onclick="openCancel('${id}')">Afbestil rejse…</button>`:''}
+    </span></div>
+  <div class="card">
+    <p class="muted" style="margin:0 0 8px">${t.trip_destinations.map(d=>d.destination).join(' + ')} · ${fmtDY(t.departure_date)} → ${fmtDY(t.return_date)} · ${t.pax_count} pax · ${t.owner||''} ·
+      ${t.package_sell_dkk?Math.round(t.package_sell_dkk).toLocaleString('da-DK')+' DKK':'pris ikke sat'}${t.comm_dkk?' · DB '+Math.round(t.comm_dkk).toLocaleString('da-DK')+' ('+pct(t.comm_dkk,t.package_sell_dkk)+')':''}
+      ${t.balance_due?' · rest forfald '+fmtDY(t.balance_due):''}${t.booking_date?' · solgt '+fmtDY(t.booking_date):''}<br>${t.customers.email||''} ${t.customers.phone||''}</p>
+    <div>${t.trip_travelers.map(x=>`<span class="pill">${x.travelers.full_name}${x.travelers.date_of_birth?' · '+x.travelers.date_of_birth:''}</span>`).join('')||'<span class="muted">Rejsende ikke registreret (Dolphin-hovedimport) — tilføjes ved behov.</span>'}</div>
+  </div>
+  <div class="card"><h3>Økonomi på rejsen</h3>
+    ${(()=>{
+      const sell=+t.package_sell_dkk||0, buy=+t.buy_dkk||0, db=+t.comm_dkk||0, pax=+t.pax_count||0;
+      const cur=t.customer_currency||'DKK';
+      const vps = VENDOR_PAYMENTS.filter(p=>p.folder===String(t.ref_no).replace(/^[A-Za-z]+/,'')||p.branch+p.folder===t.ref_no);
+      const vpTotal = vps.reduce((s,p)=>s+ +(p.dkk||0),0);
+      const vpOverdue = vps.filter(p=>p.dkk>0 && p.due && p.due<=today());
+      const vpOverdueSum = vpOverdue.reduce((s,p)=>s+ +(p.dkk||0),0);
+      const vpCredit = vps.filter(p=>p.dkk<0);
+      // itemiserede elementer med beløb
+      const items=(els||[]).map(e=>({typ:EL_TYPES[e.element_type]||e.element_type, navn:(e.suppliers&&e.suppliers.name)||e.description||'—',
+        cur:e.buy_currency||'DKK', fx:+e.buy_fx_rate||1, buyOrig:+e.buy_amount||0, buyDkk:+e.buy_amount_dkk||0, sellDkk:+e.sell_amount_dkk||0}))
+        .filter(x=>x.buyDkk||x.sellDkk);
+      const elSell=items.reduce((s,x)=>s+x.sellDkk,0), elBuy=items.reduce((s,x)=>s+x.buyDkk,0);
+      const residSell=sell-elSell, residBuy=buy-elBuy;
+      const showResid = Math.abs(residSell)>1 || Math.abs(residBuy)>1;
+      const nonDkk = items.some(x=>x.cur!=='DKK' && x.fx!==1);
+      const diff = Math.round(sell-buy-db);
+      const row=(nav,extra,s,b)=>`<tr><td>${nav}</td><td class="mini muted">${extra}</td><td class="r">${s?fmtDkkR(s):'—'}</td><td class="r">${b?fmtDkkR(b):'—'}</td><td class="r">${fmtDkkR((s||0)-(b||0))}</td><td class="r mini">${pct((s||0)-(b||0),s||0)}</td></tr>`;
+      return `<div class="grid g6" style="margin-bottom:10px">
+        <div class="kpi"><b>${fmtDkkR(sell)}</b><span>samlet salg</span></div>
+        <div class="kpi"><b>${fmtDkkR(buy)}</b><span>direkte omkostninger</span></div>
+        <div class="kpi"><b>${fmtDkkR(db)}</b><span>dækningsbidrag</span></div>
+        <div class="kpi"><b>${pct(db,sell)}</b><span>dækningsgrad</span></div>
+        <div class="kpi"><b>${pax?fmtDkkR(db/pax):'—'}</b><span>DB pr. pax (${pax})</span></div>
+        <div class="kpi ${vpOverdue.length?'warn':''}"><b>${vpOverdue.length}</b><span>forfaldne lev.betalinger</span></div>
+      </div>
+      <table style="margin-bottom:18px"><tr><th>Element</th><th>Valuta / kurs</th><th class="r">Salg DKK</th><th class="r">Køb DKK</th><th class="r">DB DKK</th><th class="r">DG</th></tr>
+        ${items.map(x=>row(x.typ+': '+x.navn, x.cur==='DKK'||x.fx===1?'DKK':`${fmtFX(x.buyOrig,x.cur)} × ${x.fx.toLocaleString('da-DK',{minimumFractionDigits:4})}`, x.sellDkk, x.buyDkk)).join('')||'<tr><td colspan="6" class="muted">Ingen elementbeløb registreret.</td></tr>'}
+        ${showResid?row('Fly + øvrigt','ikke specificeret — afregnet via Billetkontoret', residSell>1?residSell:0, residBuy>1?residBuy:0):''}
+        <tr style="border-top:2px solid var(--line);font-weight:700"><td>I alt</td><td></td><td class="r">${fmtDkkR(sell)}</td><td class="r">${fmtDkkR(buy)}</td><td class="r">${fmtDkkR(db)}</td><td class="r">${pct(db,sell)}</td></tr>
+      </table>
+      ${(()=>{const net=FINV.reduce((s,fi)=>s+(fi.doc_type==='creditnote'?-1:1)*Math.abs(+fi.total_dkk||0),0);
+        return `<div style="margin:0 0 5px;font-weight:600;color:var(--ink);font-size:12px">Fakturaer på rejsen — Billetkontoret</div>
+      ${FINV.length?`<div class="finvbox">
+        ${FINV.map(fi=>{const cred=fi.doc_type==='creditnote';const ord={fare:1,tax:2,handling_fee:3,dc:4,fee:5,other:6};
+          const LT={fare:'Billetpris',tax:'Skatter & afgifter',handling_fee:'Handling fee',dc:'DC',fee:'Gebyr',other:'Øvrigt'};
+          const lines=(fi.flight_invoice_lines||[]).slice().sort((a,b)=>(ord[a.line_type]||9)-(ord[b.line_type]||9));
+          return `<details class="finv"><summary>
+            <span><b style="color:var(--ink)">${cred?'Kreditnota':'Faktura'} ${fi.invoice_no||''}</b> <span class="muted">· ${fi.airline||'Fly'}${fi.pnr?' · '+fi.pnr:''} · ${fmtDY(fi.invoice_date)}</span></span>
+            <span class="fitot" style="color:${cred?'var(--ok)':'var(--ink)'}">${cred?'-':''}${fmtDkkR(Math.abs(fi.total_dkk||0))}</span>
+          </summary>
+          <div class="finbody">
+            <table style="font-size:11px"><tr class="mini muted"><th style="text-align:left">Prislinje</th><th class="r">Pr. rejsende</th><th class="r">Antal</th><th class="r">I alt DKK</th></tr>
+              ${lines.map(l=>`<tr><td>${l.label||LT[l.line_type]||l.line_type}</td><td class="r">${l.unit_amount_dkk!=null?fmtDkkR(l.unit_amount_dkk):'—'}</td><td class="r">${l.pax_count!=null?l.pax_count:'—'}</td><td class="r">${cred?'-':''}${fmtDkkR(Math.abs(l.amount_dkk||0))}</td></tr>`).join('')||'<tr><td colspan="4" class="muted">Ingen prislinjer.</td></tr>'}
+              <tr style="border-top:1px solid var(--line);font-weight:700"><td>I alt</td><td></td><td></td><td class="r">${cred?'-':''}${fmtDkkR(Math.abs(fi.total_dkk||0))}</td></tr>
+            </table>
+            <div class="mini muted" style="margin-top:7px"><i>Bilag/PDF kobles på når dokumenterne er samlet i den nye database.</i></div>
+          </div></details>`;}).join('')}
+        <div class="finv-total"><span>Fly i alt (netto)</span><span style="margin-left:auto;font-variant-numeric:tabular-nums">${fmtDkkR(net)}</span></div>
+      </div>`:'<div style="margin:2px 0 18px;font-size:11px" class="muted">Ingen flyfakturaer importeret for denne rejse endnu — flyudgiften vises som «Fly + øvrigt» ovenfor.</div>'}`;})()}
+      <div style="font-size:11.5px;line-height:1.9;color:var(--mut)">
+        <div style="margin-bottom:8px"><b style="color:var(--ink)">Salgsvaluta:</b> ${cur}${cur!=='DKK'?` — kun DKK-værdi (${fmtDkkR(sell)}) er registreret på denne rejse; ${cur}-beløb og salgskurs (sale_fx_rate) mangler.`:` — salg og bogføring i DKK.`}</div>
+        <div style="margin-bottom:8px"><b style="color:var(--ink)">Betaling:</b>
+        ${t.balance_due?`kunde-restbetaling forfalder <b style="color:${t.balance_due<=today()?'var(--bad)':'var(--ink)'}">${fmtDY(t.balance_due)}</b>`:'kunde-restbetaling: forfald ikke sat'}
+        · leverandørbetalinger på rejsen <b style="color:var(--ink)">${fmtDkkR(vpTotal)}</b>${vpOverdue.length?` · <b style="color:var(--bad)">heraf forfaldne ubetalte ${fmtDkkR(vpOverdueSum)}</b>`:''}${vpCredit.length?` · <b style="color:var(--ok)">kredit fra leverandør</b>`:''}</div>
+        <div style="font-size:10.5px"><b style="color:var(--ink)">Kurssporbarhed:</b> ${nonDkk?'original valuta + kurs er gemt pr. element ovenfor.':'importerede Dolphin-rejser er omregnet til DKK ved import — original valuta og kurs pr. element findes ikke (alt står som DKK, kurs 1,0). Fremad gemmes original valuta/kurs pr. element (buy_currency/buy_fx_rate) og salgskurs (sale_fx_rate), så beløbene kan spores fuldt. Fly-priser kan hentes fra Farewise og fakturerede/krediterede beløb fra e-conomic.'}</div>
+        ${diff!==0?`<br><span style="color:var(--bad);font-size:10.5px">⚠ Kontrol: salg − køb − DB = ${fmtDkkR(diff)} — afvigelse, tjek hovedtal.</span>`:''}
+      </div>`;
+    })()}
+  </div>
+  <div class="card"><h3>Rejseelementer</h3>${(els||[]).map(e=>{
+      const d=e.details||{};
+      const nights = e.element_type==='hotel'&&e.start_date&&e.end_date?Math.round((new Date(e.end_date)-new Date(e.start_date))/86400000):null;
+      const rows = Object.entries(d).filter(([k,v])=>v!==''&&v!==null&&v!==false)
+        .map(([k,v])=>`<span style="display:inline-block;min-width:31%;margin:1px 10px 1px 0"><span class="muted">${DETAIL_LABELS[k]||k}:</span> <b style="font-weight:600">${v===true?'Ja':v}</b></span>`).join('');
+      return `<div class="el-item"><b>${EL_TYPES[e.element_type]||e.element_type}: ${e.description}</b>
+        <span style="float:right"><span class="badge ${e.status==='cx'?'canx':e.status==='refunderet'?'faerdig':e.status==='udstedt'?'god_tur':'bb_sendt'}">${e.status}</span>
+        <button class="btn ghost" style="padding:2px 9px;font-size:10px" onclick="editEl('${id}','${e.id}')">Redigér</button></span>
+        <div class="muted" style="margin:3px 0 5px">${e.start_date||''}${e.end_date&&e.end_date!==e.start_date?' → '+e.end_date:''}${nights?' · '+nights+' nætter':''} · ${e.suppliers?e.suppliers.name:''}
+        ${e.vendor_due_date?' · <b style="color:var(--gold)">betales senest '+e.vendor_due_date+'</b>':''}
+        ${e.buy_amount?' · køb: '+Number(e.buy_amount).toLocaleString('da-DK')+' '+(e.buy_currency||''):''}</div>
+        <div style="font-size:11.5px;line-height:1.65">${rows||'<span class="muted">Ingen detaljer endnu — tryk Redigér.</span>'}</div></div>`;}).join('')||'<p class="muted">Ingen elementer endnu — importeret fra Dolphin på hovedniveau.</p>'}
+    <button class="btn ghost" onclick="showElForm('${id}')">+ Tilføj element</button>
+  </div>
+  <div class="card"><h3>Leverandørbetalinger på rejsen <span class="r mini">Dolphin-rapport 13. jul</span></h3>
+    ${(()=>{const ps=VENDOR_PAYMENTS.filter(p=>p.folder===String(t.ref_no).replace(/^[A-Za-z]+/,'')||p.branch+p.folder===t.ref_no); if(!ps.length) return '<p class="muted">Ingen leverandørbetalinger i rapporten for denne rejse.</p>';
+      return `<table><tr><th>Forfald</th><th>Leverandør</th><th class="r">Beløb</th><th class="r">DKK</th></tr>`+ps.sort((a,b)=>(a.due||'').localeCompare(b.due||'')).map(p=>`<tr><td class="${p.dkk>0&&p.due<=today()?'overdue':''}" style="white-space:nowrap">${fmtDY(p.due)}</td><td><b>${vpName(p.vendor)}</b> <span class="mini">${p.product||''}</span></td><td class="r" style="font-weight:600;color:${p.dkk<0?'var(--ok)':'inherit'}">${fmtFX(p.vendorAmt,p.cur)}${p.dkk<0?' (kredit)':''}</td><td class="r mini">${fmtDkkR(p.dkk)}</td></tr>`).join('')+`</table>`;})()}
+  </div>
+  <div class="card"><h3>Opgaver på rejsen</h3>
+    ${(tasks||[]).map(k=>`<div class="task-line ${k.status!=='aaben'?'muted':''}">
+      ${k.status==='aaben'?`<input type="checkbox" onchange="doneTask('${k.id}','${id}')">`:'✓'}
+      <span style="flex:1;${k.status!=='aaben'?'text-decoration:line-through':''}">${k.title}</span>
+      <span class="muted">${k.assignee||''} · ${fmtD(k.due_date)}</span></div>`).join('')||'<p class="muted">Ingen opgaver.</p>'}
+  </div>
+  <dialog id="eldlg"></dialog>`;
+}
+async function setStatus(id,s){ await db.from('trips').update({status:s}).eq('id',id); viewTrip(id); }
+async function setStatusSel(id,s){
+  if(!s) return;
+  if(s==='canx'){ alert('Brug "Afbestil rejse…" for at afbestille — så håndteres penge, elementer og kundebekræftelse korrekt.'); return viewTrip(id); }
+  const t=window.TRIP;
+  if(t && t.status==='canx' && !confirm('Fortryd afbestillingen og sæt status til "'+STATUS_LABELS[s]+'"?\n\nOBS: registrerede refusioner/kreditter/tab nulstilles IKKE automatisk — gennemgå posteringerne bagefter.')) return viewTrip(id);
+  const patch={status:s};
+  if(t && t.status==='canx'){ patch.cancelled_at=null; patch.retained_dkk=0; patch.loss_dkk=0; patch.refund_dkk=0; }
+  await db.from('trips').update(patch).eq('id',id); viewTrip(id);
+}
+
+// ═══ AFBESTILLINGS-FLOW ═══════════════════════════════════════════════════
+// Gældende afbestillingsvilkår (Generelle vilkår §6.2). Redigér her hvis vilkårene ændres.
+const AFBESTIL_VILKAAR = `Afbestilling mere end 60 dage før afrejse: afbestillingsgebyret svarer til det beløb, der er indbetalt eller forfaldent på afbestillingstidspunktet (typisk depositum, men kan være rejsens fulde pris afhængigt af leverandørens betingelser). Afbestilling færre end 60 dage før afrejse: afbestillingsgebyret er i alle tilfælde 100 %. Ved uundgåelige og ekstraordinære omstændigheder (fx krigshandlinger) på destinationen kan rejsen afbestilles gebyrfrit senest 14 dage før afrejse med fuld refusion. Ovenstående gælder medmindre andet er anført i ordrebekræftelsen.`;
+const CX_OUTCOMES = {
+  ikke_betalt:'Ikke betalt til leverandør — intet tab',
+  kreditnota:'Betalt → kreditnota fra leverandør',
+  refunderet:'Betalt → penge retur fra leverandør',
+  tabt:'Betalt → tabt (inden for frist / ikke-refunderbart)'
+};
+const daysTo = d => d? Math.round((new Date(d)-new Date(today()))/86400000):null;
+function cxNum(id){ const v=parseFloat((document.getElementById(id)||{}).value); return isNaN(v)?0:v; }
+
+function openCancel(id){
+  const t=window.TRIP, els=window.ELS||[];
+  const dtd=daysTo(t.departure_date);
+  const regel = dtd===null?'ukendt afrejsedato': dtd<60?`${dtd} dage til afrejse → gebyr 100 %`:`${dtd} dage til afrejse → gebyr = indbetalt/forfaldent (typisk depositum)`;
+  const paidGuess = t.deposit_amount||'';
+  const d=$('#eldlg');
+  d.innerHTML=`<h2 class="pf" style="font-weight:600;margin-top:0;color:var(--bad)">Afbestil rejse · ${t.ref_no}</h2>
+  <p class="muted" style="margin:0 0 10px">${kName(t)} · afrejse ${fmtDY(t.departure_date)} · <b>${regel}</b></p>
+  <div class="row"><div style="flex:2"><label>Årsag til afbestilling</label><input id="cx_reason" placeholder="fx kundens ønske / sygdom / krigsændring"></div>
+    <div><label style="display:flex;gap:6px;align-items:center;margin-top:22px"><input type="checkbox" id="cx_war" onchange="cxRecalc()"> Gebyrfri (krig/ekstraordinært)</label></div></div>
+
+  <h3 style="margin:14px 0 4px;color:var(--forest)">Elementer</h3>
+  <div style="font-size:11px" class="muted">Vælg hvad der sker med hvert element. Beløb = købspris i DKK vi har/havde hos leverandøren.</div>
+  <table style="width:100%;font-size:12px;margin:6px 0 4px"><tr><th></th><th style="text-align:left">Element</th><th style="text-align:left">Udfald</th><th class="r">Beløb DKK</th></tr>
+  ${els.map((e,i)=>{
+    const amt = Math.round(e.buy_amount_dkk|| (e.buy_amount&&(e.buy_currency==='DKK')?e.buy_amount:0) ||0);
+    const already=['cx','refunderet'].includes(e.status);
+    return `<tr>
+      <td><input type="checkbox" id="cx_el_${i}" ${already?'':'checked'} onchange="cxRecalc()"></td>
+      <td>${EL_TYPES[e.element_type]||e.element_type}: ${e.description}<div class="muted" style="font-size:10px">${e.suppliers?e.suppliers.name:'(ingen leverandør)'} · nu: ${e.status}</div></td>
+      <td><select id="cx_out_${i}" onchange="cxRecalc()">${Object.entries(CX_OUTCOMES).map(([k,v])=>`<option value="${k}" ${k==='ikke_betalt'?'selected':''}>${v}</option>`).join('')}</select></td>
+      <td class="r"><input id="cx_amt_${i}" type="number" step="0.01" value="${amt||''}" style="width:110px;text-align:right" oninput="cxRecalc()"></td>
+    </tr>`;}).join('')||'<tr><td colspan="4" class="muted">Ingen elementer registreret.</td></tr>'}
+  </table>
+
+  <h3 style="margin:14px 0 4px;color:var(--forest)">Kundens penge</h3>
+  <div class="row">
+    <div><label>Indbetalt af kunde (DKK)</label><input id="cx_paid" type="number" step="0.01" value="${paidGuess}" oninput="cxRecalc()"></div>
+    <div><label>Afbestillingsgebyr / tilbageholdes (DKK)</label><input id="cx_fee" type="number" step="0.01" oninput="cxManualFee=true;cxRecalc()"></div>
+    <div><label>Til refusion til kunde (DKK)</label><input id="cx_refund" type="number" step="0.01" oninput="cxManualRefund=true;cxRecalc()"></div>
+  </div>
+  <label style="display:flex;gap:6px;align-items:center;font-size:12px;margin-top:6px"><input type="checkbox" id="cx_bookpaid" checked> Opret kundens indbetaling som postering (hvis den ikke allerede er bogført)</label>
+  <div id="cx_summary" class="muted" style="font-size:11.5px;margin:8px 0"></div>
+
+  <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn danger" onclick="doCancel('${t.id}')">Bekræft afbestilling</button>
+    <button class="btn ghost" onclick="document.getElementById('eldlg').close()">Fortryd</button>
+    <span class="muted" style="font-size:11px;align-self:center">Sætter status = Afbestilt, opdaterer elementer, opretter kreditter/refusion, opgaver og en bekræftelse til kunden.</span>
+  </div>
+  <div class="err" id="cxerr"></div>`;
+  window.cxManualFee=false; window.cxManualRefund=false; window.CX_N=els.length;
+  d.showModal(); cxRecalc();
+}
+function cxRecalc(){
+  const t=window.TRIP, n=window.CX_N||0, dtd=daysTo(t.departure_date);
+  let loss=0, credit=0, refundSup=0;
+  for(let i=0;i<n;i++){ const on=(document.getElementById('cx_el_'+i)||{}).checked; if(!on)continue;
+    const out=(document.getElementById('cx_out_'+i)||{}).value; const a=cxNum('cx_amt_'+i);
+    if(out==='tabt')loss+=a; else if(out==='kreditnota')credit+=a; else if(out==='refunderet')refundSup+=a; }
+  const paid=cxNum('cx_paid');
+  if(!window.cxManualFee){ // auto-gebyr efter vilkår
+    let fee = (document.getElementById('cx_war')||{}).checked ? 0 : (dtd!==null && dtd<60 ? paid : (t.deposit_amount||Math.min(paid,loss)||0));
+    fee=Math.min(fee,paid); const f=document.getElementById('cx_fee'); if(f)f.value=fee?Math.round(fee*100)/100:0;
+  }
+  const fee=cxNum('cx_fee');
+  if(!window.cxManualRefund){ const r=document.getElementById('cx_refund'); if(r)r.value=Math.max(0,Math.round((paid-fee)*100)/100); }
+  const refund=cxNum('cx_refund');
+  const net=fee-loss;
+  const s=document.getElementById('cx_summary');
+  if(s)s.innerHTML=`Tilbageholdt fra kunde (indtægt): <b>${fmtKr(fee)}</b> · Til refusion: <b>${fmtKr(refund)}</b> · Leverandørtab: <b>${fmtKr(loss)}</b> · Kreditnotaer: <b>${fmtKr(credit)}</b> · Leverandørrefusion: <b>${fmtKr(refundSup)}</b><br><b style="color:${net>=0?'var(--ok)':'var(--bad)'}">Nettoresultat af afbestilling: ${fmtKr(net)} DKK</b> (tilbageholdt − tab)`;
+}
+async function doCancel(id){
+  const t=window.TRIP, els=window.ELS||[], n=els.length;
+  const err=$('#cxerr'); err.textContent='';
+  const reason=($('#cx_reason').value||'').trim();
+  const war=$('#cx_war').checked;
+  const paid=cxNum('cx_paid'), fee=cxNum('cx_fee'), refund=cxNum('cx_refund');
+  if(!confirm(`Afbestil ${t.ref_no}?\n\nTilbageholdt: ${fmtKr(fee)} · Refusion til kunde: ${fmtKr(refund)} DKK`)) return;
+  try{
+    let loss=0; const creditRows=[]; const taskRows=[]; const cur=t.customer_currency||'DKK';
+    for(let i=0;i<n;i++){ const e=els[i]; if(!(document.getElementById('cx_el_'+i)||{}).checked) continue;
+      const out=document.getElementById('cx_out_'+i).value; const a=cxNum('cx_amt_'+i);
+      const newStatus = out==='refunderet' ? 'refunderet' : 'cx';
+      await db.from('trip_elements').update({status:newStatus}).eq('id',e.id);
+      const supId=e.financial_supplier_id||e.supplier_id||null;
+      if(out==='kreditnota' && supId && a>0){ creditRows.push({supplier_id:supId, origin_trip_id:id, currency:'DKK', amount:a, note:`Kreditnota – afbestilt ${t.ref_no}: ${e.description}`}); }
+      if(out==='tabt') loss+=a;
+      taskRows.push({trip_id:id, element_id:e.id, task_type:'afbestil_element', title:`Afbestil hos leverandør: ${e.description}${e.suppliers?' ('+e.suppliers.name+')':''}`, assignee:t.owner||null, due_date:today(), auto_generated:true});
+      if(supId && out!=='ikke_betalt'){ taskRows.push({trip_id:id, element_id:e.id, task_type:'kredit_refusion', title:`Tjek ${out==='kreditnota'?'kreditnota':out==='refunderet'?'refusion':'evt. refusion'} hos ${e.suppliers?e.suppliers.name:'leverandør'}: ${e.description}`, assignee:t.owner||null, due_date:today(), auto_generated:true}); }
+    }
+    if(creditRows.length){ const {error}=await db.from('supplier_credits').insert(creditRows); if(error)throw new Error('kreditnota: '+error.message); }
+
+    // Kundens indbetaling (rekonstruktion) + refusion ud
+    if($('#cx_bookpaid').checked && paid>0){
+      const {data:pin,error:e1}=await db.from('payments').insert({direction:'ind',status:'betalt',amount:paid,currency:cur,fx_rate:1,amount_dkk:paid,bank_account:'(rekonstruktion)',method:'rekonstruktion',payment_ref:t.ref_no+'-IND',payment_date:today(),in_type:'delbetaling',note:'Rekonstrueret indbetaling ifm. afbestilling'}).select('id').single();
+      if(e1)throw new Error('indbetaling: '+e1.message);
+      await db.from('payment_allocations').insert({payment_id:pin.id,trip_id:id,amount_dkk:paid});
+    }
+    if(refund>0){
+      const {data:pout,error:e2}=await db.from('payments').insert({direction:'ud',status:'aaben',amount:refund,currency:cur,fx_rate:1,amount_dkk:refund,bank_account:'',method:'refusion',payment_ref:t.ref_no+'-REF',payment_date:today(),in_type:'refund_til_kunde',note:'Refusion til kunde – afbestilling'}).select('id').single();
+      if(e2)throw new Error('refusion: '+e2.message);
+      await db.from('payment_allocations').insert({payment_id:pout.id,trip_id:id,amount_dkk:refund});
+      taskRows.push({trip_id:id, task_type:'refusion_udbetaling', title:`Udbetal refusion til kunde: ${fmtKr(refund)} DKK`, assignee:t.owner||null, due_date:today(), auto_generated:true});
+    }
+    taskRows.push({trip_id:id, task_type:'afbestillingsbekraeftelse', title:'Send afbestillingsbekræftelse til kunde', assignee:t.owner||null, due_date:today(), auto_generated:true});
+    if(taskRows.length) await db.from('tasks').insert(taskRows);
+
+    await db.from('trips').update({status:'canx', cancelled_at:today(), cancel_reason:reason||(war?'Krig/ekstraordinært':null), retained_dkk:fee, loss_dkk:loss, refund_dkk:refund}).eq('id',id);
+
+    $('#eldlg').close();
+    if(confirm(`Afbestilt ✓\n\nTilbageholdt ${fmtKr(fee)} · tab ${fmtKr(loss)} · refusion ${fmtKr(refund)} DKK.\nOpgaver oprettet.\n\nÅbn afbestillingsbekræftelse til kunden nu?`)){
+      genAfbestilDoc(t,{paid,fee,refund,reason:reason||(war?'Krig/ekstraordinært':''),war});
+    }
+    viewTrip(id);
+  }catch(ex){ err.textContent='Fejl: '+ex.message; }
+}
+function genAfbestilDoc(t,o){
+  const w=window.open('','_blank'); if(!w){alert('Tillad pop-ups for at åbne bekræftelsen.');return;}
+  const line=(l,v)=>`<tr><td>${l}</td><td style="text-align:right">${fmtKr(v)} DKK</td></tr>`;
+  w.document.write(`<!doctype html><html lang="da"><head><meta charset="utf-8"><title>Afbestillingsbekræftelse ${t.ref_no}</title>
+  <style>body{font-family:Georgia,serif;color:#23301f;max-width:720px;margin:32px auto;padding:0 24px;line-height:1.55}
+  h1{font-size:22px;color:#8a2b25;border-bottom:2px solid #d8cdb5;padding-bottom:8px}
+  table{width:100%;border-collapse:collapse;margin:14px 0}td{padding:6px 4px;border-bottom:1px solid #eee}
+  .tot td{font-weight:700;border-top:2px solid #23301f;border-bottom:none}
+  .terms{font-size:12px;color:#555;background:#faf7f0;border:1px solid #e7dfce;padding:12px 14px;border-radius:6px;margin-top:18px}
+  .muted{color:#777;font-size:13px}@media print{body{margin:0}}</style></head><body>
+  <div class="muted">The Makai Travel Group · Maldivia</div>
+  <h1>Afbestillingsbekræftelse</h1>
+  <p>Kære ${t.customers?t.customers.first_name:''} ${t.customers?t.customers.last_name:''},<br>
+  Vi bekræfter hermed afbestillingen af din rejse <b>${t.ref_no}</b> med afrejse ${fmtDY(t.departure_date)}${o.reason?` (årsag: ${o.reason})`:''}.</p>
+  <h3>Refusionsopgørelse</h3>
+  <table>
+    ${line('Indbetalt beløb',o.paid)}
+    ${line('Afbestillingsgebyr / tilbageholdt',o.fee)}
+    <tr class="tot"><td>Til refusion</td><td style="text-align:right">${fmtKr(o.refund)} DKK</td></tr>
+  </table>
+  <div class="terms"><b>Gældende afbestillingsvilkår</b><br>${AFBESTIL_VILKAAR}${o.war?'<br><br><i>Denne afbestilling er behandlet som gebyrfri iht. reglerne om uundgåelige og ekstraordinære omstændigheder.</i>':''}</div>
+  <p class="muted" style="margin-top:20px">Beløbet refunderes til den konto, betalingen er foretaget fra. Har du spørgsmål, er du velkommen til at kontakte os.<br>Med venlig hilsen<br>Maldivia · The Makai Travel Group</p>
+  <p class="muted" style="font-size:11px">Udkast til gennemsyn — kontrollér beløb og tekst før afsendelse. Tryk Ctrl/Cmd+P for at gemme som PDF.</p>
+  </body></html>`);
+  w.document.close();
+}
+async function doneTask(taskId,tripId){ await db.from('tasks').update({status:'udfoert',done_at:new Date().toISOString()}).eq('id',taskId); viewTrip(tripId); }
+function editEl(tripId,elId){ const e=(window.ELS||[]).find(x=>x.id===elId); if(e) showElForm(tripId, JSON.stringify(e)); }
+function showElForm(tripId, existingJson){
+  const ex = existingJson?JSON.parse(existingJson):null;
+  const d = $('#eldlg');
+  const typeFields=(type,vals)=>(FIELD_DEFS[type]||[]).map(([k,label,ftype,ph])=>{
+    const v = vals&&vals[k]!==undefined?vals[k]:'';
+    const inp = ftype==='textarea'?`<textarea data-dk="${k}" rows="2" placeholder="${ph}">${v}</textarea>`:`<input data-dk="${k}" type="${ftype}" placeholder="${ph}" value="${String(v).replace(/"/g,'&quot;')}">`;
+    return `<div style="flex:1;min-width:190px"><label>${label}</label>${inp}</div>`;}).join('');
+  d.innerHTML = `<h2 class="pf" style="font-weight:600;margin-top:0;color:var(--forest)">${ex?'Redigér element':'Nyt rejseelement'}</h2>
+    <div class="row"><div><label>Type</label><select id="e_type" ${ex?'disabled':''}>${Object.entries(EL_TYPES).map(([k,v])=>`<option value="${k}" ${ex&&ex.element_type===k?'selected':''}>${v}</option>`).join('')}</select></div>
+    <div style="flex:2"><label>Navn/beskrivelse</label><input id="e_desc" placeholder="udfyldes automatisk for fly" value="${ex?String(ex.description).replace(/"/g,'&quot;'):''}"></div>
+    <div><label>Status</label><select id="e_status">${['booket','udstedt','cx','refunderet'].map(s=>`<option value="${s}" ${ex&&ex.status===s?'selected':''}>${s}</option>`).join('')}</select></div></div>
+    <div class="row"><div><label>Startdato</label><input id="e_start" type="date" value="${ex&&ex.start_date||''}"></div><div><label>Slutdato</label><input id="e_end" type="date" value="${ex&&ex.end_date||''}"></div>
+    <div><label>Leverandør</label><select id="e_sup"><option value="">— vælg —</option>${SUPS.map(s=>`<option value="${s.id}" ${ex&&ex.supplier_id===s.id?'selected':''}>${s.name}</option>`).join('')}<option value="__ny">+ Opret ny…</option></select></div></div>
+    <div class="row"><div><label>Betales senest</label><input id="e_due" type="date" value="${ex&&ex.vendor_due_date||''}"></div>
+    <div><label>Udstedelsesfrist</label><input id="e_issue" type="date" value="${ex&&ex.issue_deadline||''}"></div>
+    <div><label>Købspris</label><input id="e_buy" type="number" step="0.01" value="${ex&&ex.buy_amount||''}"></div>
+    <div><label>Valuta</label><select id="e_cur">${['DKK','USD','EUR','GBP','NOK'].map(c=>`<option ${ex&&ex.buy_currency===c?'selected':''}>${c}</option>`).join('')}</select></div></div>
+    <hr style="border:none;border-top:1px solid var(--line);margin:12px 0">
+    <div id="typefields" class="row" style="flex-wrap:wrap">${typeFields(ex?ex.element_type:'flight', ex?ex.details:null)}</div>
+    <div style="margin-top:14px"><button class="btn" onclick="saveEl('${tripId}', ${ex?`'${ex.id}'`:'null'})">Gem</button>
+    <button class="btn ghost" onclick="document.getElementById('eldlg').close()">Annullér</button></div><div class="err" id="elerr"></div>`;
+  d.showModal();
+  if(!ex) $('#e_type').onchange = () => { $('#typefields').innerHTML = typeFields($('#e_type').value, null); };
+}
+async function saveEl(tripId, existingId){
+  let supId = $('#e_sup').value || null;
+  if(supId==='__ny'){
+    const name=prompt('Leverandørens navn:'); if(!name) return;
+    const type=prompt('Type (hotel_direkte / bedbank / konsolidator / transfer / andet):','hotel_direkte')||'andet';
+    const {data:ns,error:se}=await db.from('suppliers').insert({name,supplier_type:type}).select('id').single();
+    if(se){$('#elerr').textContent=se.message;return;}
+    supId=ns.id;
+  }
+  const details={};
+  document.querySelectorAll('#typefields [data-dk]').forEach(inp=>{if(inp.value!=='')details[inp.dataset.dk]=inp.type==='number'?Number(inp.value):inp.value;});
+  let desc=$('#e_desc').value.trim();
+  if(!desc&&details.flight_no) desc=`${details.airline||''} ${details.flight_no} ${details.dep||''} → ${details.arr||''}`.trim();
+  if(!desc){$('#elerr').textContent='Giv elementet et navn.';return;}
+  const payload={trip_id:tripId,element_type:$('#e_type').value,description:desc,status:$('#e_status').value,
+    start_date:$('#e_start').value||null,end_date:$('#e_end').value||null,supplier_id:supId,financial_supplier_id:supId,
+    vendor_due_date:$('#e_due').value||null,issue_deadline:$('#e_issue').value||null,
+    buy_amount:$('#e_buy').value||null,buy_currency:$('#e_buy').value?$('#e_cur').value:null,details};
+  const q = existingId?db.from('trip_elements').update(payload).eq('id',existingId):db.from('trip_elements').insert(payload);
+  const {error}=await q;
+  if(error){$('#elerr').textContent=error.message;return;}
+  $('#eldlg').close(); viewTrip(tripId);
+}
+
+// ═══ NY REJSE ═══
+async function viewNew(){
+  navTo('new');
+  const {data:custs}=await db.from('customers').select('id,first_name,last_name,email').order('last_name');
+  app.innerHTML = `<div class="pagehead"><h2>Ny rejse</h2></div><div class="card">
+    <label>Kunde</label>
+    <select id="n_cust"><option value="__ny">+ Ny kunde…</option>${(custs||[]).map(c=>`<option value="${c.id}">${c.last_name}, ${c.first_name} (${c.email||'—'})</option>`).join('')}</select>
+    <div id="newcust">
+      <div class="row"><div><label>Fornavn</label><input id="c_fn"></div><div><label>Efternavn</label><input id="c_ln"></div></div>
+      <div class="row"><div><label>E-mail</label><input id="c_em"></div><div><label>Telefon</label><input id="c_ph"></div>
+      <div><label>Land</label><select id="c_co"><option>NO</option><option>DK</option><option>IT</option></select></div></div>
+    </div>
+    <label>Rejsende (én pr. linje: Efternavn, Fornavn TITEL · ÅÅÅÅ-MM-DD)</label>
+    <textarea id="n_trav" rows="3" placeholder="Bakken, Cecilie Tessem MRS · 1972-12-28"></textarea>
+    <div class="row">
+      <div><label>Branch</label><select id="n_branch"><option>MN</option><option>MD</option><option>IT</option></select></div>
+      <div><label>Ref.nr. (tom = automatisk)</label><input id="n_ref" placeholder="fx MN1750 (Dolphin-parallel)"></div>
+      <div><label>Kundevaluta</label><select id="n_cur"><option>NOK</option><option>DKK</option><option>EUR</option></select></div>
+    </div>
+    <div class="row">
+      <div><label>Afrejse</label><input id="n_dep" type="date"></div>
+      <div><label>Hjemkomst</label><input id="n_ret" type="date"></div>
+      <div><label>Destinationer (kommasepareret)</label><input id="n_dest" placeholder="Maldiverne, Dubai"></div>
+    </div>
+    <div class="row">
+      <div><label>Pakkepris (kundevaluta)</label><input id="n_price" type="number" step="0.01" oninput="calcPay()"></div>
+      <div><label>Depositum</label><input id="n_depos" type="number" step="0.01"></div>
+      <div><label>Depositum forfald</label><input id="n_deposdue" type="date"></div>
+      <div><label>Rest forfald</label><input id="n_baldue" type="date"></div>
+    </div>
+    <p class="muted" id="payrule"></p>
+    <div style="margin-top:12px"><button class="btn" onclick="saveTrip()">Opret rejse</button></div>
+    <div class="err" id="nerr"></div></div>`;
+  $('#n_cust').onchange=()=>$('#newcust').style.display=$('#n_cust').value==='__ny'?'':'none';
+  $('#n_dep').onchange=calcPay;
+}
+function calcPay(){
+  const dep=$('#n_dep').value, price=parseFloat($('#n_price').value);
+  if(!dep||!price) return;
+  const days=Math.round((new Date(dep)-new Date())/86400000);
+  const bal=new Date(new Date(dep)-60*86400000).toISOString().slice(0,10);
+  if(days>60){$('#n_depos').value=(price/2).toFixed(2);$('#n_deposdue').value=today();$('#n_baldue').value=bal;
+    $('#payrule').textContent=`Regel: ${days} dage til afrejse (>60) → depositum 50 % nu, rest senest ${bal}. Justér frit.`;}
+  else{$('#n_depos').value='';$('#n_deposdue').value='';$('#n_baldue').value=today();
+    $('#payrule').textContent=`Regel: ${days} dage til afrejse (≤60) → hele beløbet forfalder ved bestilling.`;}
+}
+async function saveTrip(){
+  const err=m=>{$('#nerr').textContent=m;};
+  try{
+    let custId=$('#n_cust').value;
+    if(custId==='__ny'){
+      if(!$('#c_ln').value) return err('Kundens efternavn mangler.');
+      const {data:c,error:ce}=await db.from('customers').insert({first_name:$('#c_fn').value,last_name:$('#c_ln').value,email:$('#c_em').value||null,phone:$('#c_ph').value||null,country:$('#c_co').value,language:$('#c_co').value==='DK'?'da':$('#c_co').value==='IT'?'it':'no'}).select('id').single();
+      if(ce) return err(ce.message); custId=c.id;
+    }
+    if(!$('#n_dep').value) return err('Afrejsedato mangler.');
+    let ref=$('#n_ref').value.trim();
+    if(!ref){const {data:r,error:re}=await db.rpc('next_ref_no',{p_branch:$('#n_branch').value});if(re)return err(re.message);ref=r;}
+    const travLines=$('#n_trav').value.split('\n').map(x=>x.trim()).filter(Boolean);
+    const {data:trip,error:te}=await db.from('trips').insert({
+      ref_no:ref,branch:$('#n_branch').value,customer_id:custId,
+      departure_date:$('#n_dep').value,return_date:$('#n_ret').value||null,
+      pax_count:Math.max(travLines.length,1),customer_currency:$('#n_cur').value,
+      package_sell_total:$('#n_price').value||null,
+      deposit_amount:$('#n_depos').value||null,deposit_due:$('#n_deposdue').value||null,
+      balance_due:$('#n_baldue').value||null,booking_date:today(),owner:window.ME
+    }).select('id').single();
+    if(te) return err(te.message);
+    const dests=($('#n_dest').value||'Maldiverne').split(',').map(x=>x.trim()).filter(Boolean);
+    await db.from('trip_destinations').insert(dests.map((d,i)=>({trip_id:trip.id,destination:d,seq:i+1})));
+    for(const line of travLines){
+      const [name,dob]=line.split('·').map(x=>x.trim());
+      const {data:tv,error:tve}=await db.from('travelers').insert({customer_id:custId,full_name:name,date_of_birth:dob||null}).select('id').single();
+      if(tve) return err('Rejsende: '+tve.message);
+      await db.from('trip_travelers').insert({trip_id:trip.id,traveler_id:tv.id});
+    }
+    viewTrip(trip.id);
+  }catch(e){err(e.message);}
+}
+
+init();
+</script>
+</body>
+</html>
