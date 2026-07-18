@@ -465,7 +465,6 @@ function showLogin(){
       <label for="pw">Kodeord</label><input id="pw" name="password" type="password" autocomplete="current-password" required minlength="6">
       <div style="margin-top:15px" class="row">
         <button class="btn" type="submit">Log ind</button>
-        <button class="btn ghost" type="button" id="signupbtn">Opret bruger</button>
       </div>
       <div style="margin-top:10px"><button type="button" id="forgotbtn" style="padding:0;background:none;border:none;color:var(--gold);font-size:11.5px;cursor:pointer;text-decoration:underline;font-family:inherit">Glemt kodeord?</button></div>
     </form>
@@ -480,12 +479,8 @@ function showLogin(){
     const {error}=await db.auth.signInWithPassword(c);
     if(error) msg(/invalid/i.test(error.message)?'Forkert e-mail eller kodeord.':/confirm/i.test(error.message)?'E-mail ikke bekræftet — sig til Claude.':error.message);
   });
-  document.getElementById('signupbtn').addEventListener('click', async ()=>{
-    const c=creds();
-    if(!c.email||!c.password) return msg('Udfyld e-mail + kodeord (min. 6 tegn), tryk så Opret.');
-    const {error}=await db.auth.signUp(c);
-    msg(error?error.message:'Bruger oprettet — bed Claude bekræfte den, og log ind.',!error);
-  });
+  // Selv-registrering er fjernet (v0.7): nye brugere oprettes af en admin på Brugere-siden,
+  // som også opretter login'et og udleverer et engangskodeord.
   document.getElementById('forgotbtn').addEventListener('click', async ()=>{
     const c=creds();
     if(!c.email) return msg('Skriv din e-mail i feltet ovenfor, tryk så «Glemt kodeord?».');
@@ -1933,6 +1928,11 @@ async function viewUsers(){
   const { data: users, error } = await db.from('team_members').select('*').order('name');
   if(error){ app.innerHTML = '<div class="card"><p class="muted">Kunne ikke hente brugere: '+error.message+'</p></div>'; return; }
   window._USERS = users||[];
+  // Vis et netop genereret engangskodeord OVEN PÅ den genindlæste liste (ellers viskes det væk)
+  const pwCard = window._LASTPW ? `<div class="card" style="border-color:var(--gold)"><h3>Login ${window._LASTPW.action} for ${window._LASTPW.email}</h3>
+     <p style="margin:0 0 6px">Engangskodeord: <b style="font-size:16px;letter-spacing:1px">${window._LASTPW.pw}</b></p>
+     <p class="mini muted" style="margin:0">Giv det til brugeren ad en sikker kanal (ikke mail). De logger ind med det og skifter selv kodeord under «Skift kodeord». Kodeordet vises kun her, én gang.</p></div>` : '';
+  window._LASTPW = null;
   const rows = window._USERS.map(u=>{
     const eff = effPerms(u), isMe = u.email===window.MYEMAIL;
     const roleOpts = (window.ROLES||[]).map(r=>`<option value="${r.role_key}" ${u.role===r.role_key?'selected':''}>${r.label}</option>`).join('');
@@ -1954,6 +1954,7 @@ async function viewUsers(){
     <div class="pl">${PERM_DEFS.map(([k,lbl])=>`<span class="${(r.permissions||{})[k]?'y':'n'}">${lbl}</span>`).join('')}</div></div>`).join('');
   app.innerHTML = `
   <div class="pagehead"><h2>Brugere</h2><span class="sub">roller & rettigheder · ændringer gælder fra næste login/genindlæsning</span></div>
+  ${pwCard}
   <div class="grid g2">
     <div>
       <div class="card"><h3>Teamet <span class="r muted">${window._USERS.length} brugere</span></h3>${rows}</div>
@@ -1962,7 +1963,7 @@ async function viewUsers(){
           <div><label>Navn</label><input id="nu_name" placeholder="Fornavn Efternavn"></div>
           <div><label>E-mail</label><input id="nu_email" placeholder="xx@maldivia.dk"></div>
           <div><label>Initialer</label><input id="nu_ini" placeholder="ABC" maxlength="4" style="text-transform:uppercase"></div>
-          <div><label>Rolle</label><select id="nu_role">${(window.ROLES||[]).map(r=>`<option value="${r.role_key}">${r.label}</option>`).join('')}</select></div>
+          <div><label>Rolle</label><select id="nu_role">${(window.ROLES||[]).map(r=>`<option value="${r.role_key}" ${r.role_key==='saelger'?'selected':''}>${r.label}</option>`).join('')}</select></div>
         </div>
         <div class="dlg-actions"><button class="btn" onclick="usrAdd()">Opret bruger</button><span id="nu_err" class="muted"></span></div>
         <p class="mini muted" style="margin:10px 0 0">Når du opretter en bruger, oprettes deres login automatisk, og du får vist et <b>engangskodeord</b> — giv det til brugeren, som selv skifter det under «Skift kodeord» efter første login. «Opret/nulstil login» på en eksisterende bruger gør det samme (nyt engangskodeord).</p></div>
@@ -2003,8 +2004,7 @@ async function usrAdd(){
   if(!name||!email.includes('@')||ini.length<2){ err.textContent='Udfyld navn, gyldig e-mail og initialer.'; return; }
   const {error}=await db.from('team_members').insert({name,email,initials:ini,role,permission_overrides:{},active:true});
   if(error){ err.textContent=error.message; return; }
-  await usrLogin(email);   // opret login med det samme og vis engangskodeordet
-  viewUsers();
+  await usrLogin(email);   // opret login med det samme — genindlæser listen og viser engangskodeordet
 }
 // Engangskodeord: læsbart men tilfældigt (fx Mal-K7RC-P2WX)
 function genPw(){
@@ -2028,10 +2028,7 @@ async function usrLogin(email){
   }catch(e){ alertUsr({message:'Kunne ikke nå opret-login: '+e.message}); return; }
   if(!j || !j.ok){ alertUsr({message:(j&&j.error)||'Ukendt fejl fra opret-login'}); return; }
   window._LASTPW = {email, pw, action:j.action};
-  app.insertAdjacentHTML('afterbegin',
-    `<div class="card" style="border-color:var(--gold)"><h3>Login ${j.action} for ${email}</h3>
-     <p style="margin:0 0 6px">Engangskodeord: <b style="font-size:16px;letter-spacing:1px">${pw}</b></p>
-     <p class="mini muted" style="margin:0">Giv det til brugeren ad en sikker kanal (ikke mail). De logger ind med det og skifter selv kodeord under «Skift kodeord». Kodeordet vises kun her, én gang.</p></div>`);
+  await viewUsers();               // genindlæs listen — kodeord-kortet vises øverst via _LASTPW
   window.scrollTo({top:0,behavior:'smooth'});
 }
 function alertUsr(error){ app.insertAdjacentHTML('afterbegin','<div class="card" style="border-color:var(--bad)"><p style="color:var(--bad);margin:0">Kunne ikke gemme: '+error.message+'</p></div>'); }
