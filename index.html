@@ -298,7 +298,7 @@ const LEAD_STAGES = [
   ['thinking','Tænker på det'],['negotiation','Flere tilbud / forhandling'],['confirmed','Vundet (bekræftet)']
 ];
 const LEAD_STAGE_LABEL = Object.fromEntries(LEAD_STAGES);
-const LEAD_FIELDS = 'id,pipedrive_deal_id,title,stage,status,branch,owner,contact_name,contact_email,contact_phone,est_value,currency,destination,adults,kids,child_ages,departure_airport,departure_date,return_date,earliest_departure,latest_return,nights,villas,max_budget,contact_pref,travel_wishes,wishes,source,heard_about_us,contacted,offers_count,next_action_date,lost_reason,converted_trip_id,notes,created_at,updated_at';
+const LEAD_FIELDS = 'id,pipedrive_deal_id,title,stage,status,branch,owner,contact_name,contact_email,contact_phone,est_value,currency,destination,adults,kids,child_ages,departure_airport,departure_date,return_date,earliest_departure,latest_return,nights,villas,max_budget,contact_pref,travel_wishes,wishes,highlights,source,heard_about_us,contacted,offers_count,next_action_date,lost_reason,converted_trip_id,notes,created_at,updated_at';
 const EL_TYPES = {flight:'Fly', ticket:'Billet', hotel:'Hotel', transfer:'Transfer', other:'Andet', fee:'Gebyr', insurance:'Forsikring'};
 const SALES_TASKS = ['tjek_rejse','pre_departure','god_tur','hjemkomst','retrieval'];
 const FIN_TASKS = ['restbetaling','leverandoerbetaling','kreditvarsel','dok_sync'];
@@ -1985,6 +1985,7 @@ function editLead(id){
       <div><label>Villaer/værelser</label><input id="l_villas" type="number" value="${v('villas')}"></div>
       <div><label>Hvordan kontaktes?</label><input id="l_contact_pref" value="${escH(v('contact_pref'))}"></div>
       <div><label>Ansvarlig</label><input id="l_owner" value="${escH(v('owner')||window.ME||'')}"></div>
+      <div class="full"><label>Highlights</label><textarea id="l_highlights" rows="2">${escH(v('highlights'))}</textarea></div>
       <div class="full"><label>Rejseønsker</label><textarea id="l_travel_wishes" rows="2">${escH(v('travel_wishes'))}</textarea></div>
       <div class="full"><label>Ønsker / interne noter</label><textarea id="l_wishes" rows="2">${escH(v('wishes'))}</textarea></div>
       <div><label>Hvor hørt om os?</label><input id="l_heard_about_us" value="${escH(v('heard_about_us'))}"></div>
@@ -2011,7 +2012,7 @@ function leadFormData(){
     departure_airport:g('l_departure_airport')||null, adults:num('l_adults'), kids:num('l_kids'), child_ages:g('l_child_ages')||null,
     departure_date:g('l_departure_date')||null, return_date:g('l_return_date')||null,
     nights:num('l_nights'), villas:num('l_villas'), contact_pref:g('l_contact_pref')||null, owner:g('l_owner')||null,
-    travel_wishes:g('l_travel_wishes')||null, wishes:g('l_wishes')||null, heard_about_us:g('l_heard_about_us')||null, source:g('l_source')||null };
+    travel_wishes:g('l_travel_wishes')||null, wishes:g('l_wishes')||null, highlights:g('l_highlights')||null, heard_about_us:g('l_heard_about_us')||null, source:g('l_source')||null };
 }
 async function saveLead(id){
   const rec = leadFormData();
