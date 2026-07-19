@@ -865,6 +865,13 @@ async function viewDash(){
     </details>`}
   </div>
 
+  <div class="card" style="margin-bottom:12px"><h3>Afrejser</h3>
+    <p class="subhead">Rejser i dag${depToday.length?` · ${depToday.length}`:''}</p>
+    ${depToday.length?groupNat(depToday,depRow):'<p class="muted">Ingen afrejser i dag.</p>'}
+    <p class="subhead">Kommende afrejser · næste 7 dage${depWeek.length?` · ${depWeek.length}`:''}</p>
+    ${depWeek.length?groupNat(depWeek,depRow):'<p class="muted">Ingen de næste 7 dage.</p>'}
+  </div>
+
   <div class="card" style="margin-bottom:12px">
     <h3>I brug i dag — hvem er hvor <span class="r muted">${new Date().toLocaleDateString('da-DK',{day:'numeric',month:'short'})} · ${tripsInUse} rejser aktive · ${sharedEls} delte hoteller/fly</span></h3>
     ${inUse.length ? `<div class="inuse">`+inUse.map(g=>{const shared=g.tripIds.length>1;
@@ -874,24 +881,19 @@ async function viewDash(){
       </div>`;}).join('')+`</div>` : '<p class="muted">Ingen hoteller, fly eller transfers i brug i dag.</p>'}
   </div>
 
+  <div class="card" style="margin-bottom:12px"><h3>På vej hjem</h3>
+    <p class="subhead">Hjem i dag${homeToday.length?` · ${homeToday.length}`:''}</p>
+    ${homeToday.length?groupNat(homeToday,homeRow):'<p class="muted">Ingen hjemrejser i dag.</p>'}
+    <p class="subhead">Hjem i morgen${homeTomorrow.length?` · ${homeTomorrow.length}`:''}</p>
+    ${homeTomorrow.length?groupNat(homeTomorrow,homeRow):'<p class="muted">Ingen hjemrejser i morgen.</p>'}
+  </div>
+
   <div class="grid g2">
     <div>
       <div class="card" id="newsbox"><h3>Nyheder — de 5 vigtigste lige nu ${brief?`<span class="r muted">pr. ${fmtD(brief.briefing_date)}</span>`:''}</h3>
         ${brief?`<div class="news">${brief.items.map((n,i)=>`<div class="item"><span class="num">${i+1}</span>
           <span style="flex:1"><a class="hl" href="${n.url}" target="_blank" rel="noopener">${n.headline}</a>
           <p>${n.summary}</p><span class="src">${n.source} ↗</span></span></div>`).join('')}</div>`:'<p class="muted">Ingen briefing i dag.</p>'}
-      </div>
-      <div class="card"><h3>Afrejser</h3>
-        <p class="subhead">Rejser i dag${depToday.length?` · ${depToday.length}`:''}</p>
-        ${depToday.length?groupNat(depToday,depRow):'<p class="muted">Ingen afrejser i dag.</p>'}
-        <p class="subhead">Kommende afrejser · næste 7 dage${depWeek.length?` · ${depWeek.length}`:''}</p>
-        ${depWeek.length?groupNat(depWeek,depRow):'<p class="muted">Ingen de næste 7 dage.</p>'}
-      </div>
-      <div class="card"><h3>På vej hjem</h3>
-        <p class="subhead">Hjem i dag${homeToday.length?` · ${homeToday.length}`:''}</p>
-        ${homeToday.length?groupNat(homeToday,homeRow):'<p class="muted">Ingen hjemrejser i dag.</p>'}
-        <p class="subhead">Hjem i morgen${homeTomorrow.length?` · ${homeTomorrow.length}`:''}</p>
-        ${homeTomorrow.length?groupNat(homeTomorrow,homeRow):'<p class="muted">Ingen hjemrejser i morgen.</p>'}
       </div>
     </div>
     <div>
