@@ -1983,6 +1983,49 @@ function dagOrd(d){ return d==null?'—':(d===0?'i dag':d===1?'1 dag':d+' dage')
 function fmtDT(ts){ if(!ts) return '—'; return new Date(ts).toLocaleString('da-DK',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}); }
 const BRANCH_LABEL={MN:'Maldivia NO',NO:'Maldivia NO',MD:'Maldivia DK',IT:'Maldivia IT',HQ:'HQ'};
 const STAGE_SHORT={new_lead:'Ny',send_email:'Send e-mail',make_offer:'Lav tilbud',to_be_sent:'Klar',offer_sent:'Tilbud sendt',followed_up:'Fulgt op',thinking:'Tænker',negotiation:'Forhandling',confirmed:'Vundet'};
+const ROT_DAYS=4; // henvendelsen "rådner" når den har ligget stille på et trin i mere end så mange dage
+const DEST_OPTS=['Maldiverne','Dubai','Abu Dhabi','Qatar','Sri Lanka','Mauritius','Seychellerne','Zanzibar','Thailand','Bali / Indonesien','Singapore','Malaysia','Vietnam'];
+const AIRPORT_OPTS=['Oslo (OSL)','Bergen (BGO)','Stavanger (SVG)','Trondheim (TRD)','Tromsø (TOS)','Kristiansand (KRS)','Ålesund (AES)','Bodø (BOO)','Haugesund (HAU)','Sandefjord Torp (TRF)','København (CPH)','Billund (BLL)','Aalborg (AAL)','Aarhus (AAR)','Hamburg (HAM)'];
+// ── destinationer (dropdown + chips) ──
+function getDest(){ const el=document.getElementById('l_destination'); return el?destList(el.value):[]; }
+function setDest(arr){ const el=document.getElementById('l_destination'); if(!el) return; el.value=arr.join(', '); renderDestChips(); autoSaveLead(); }
+function renderDestChips(){ const box=document.getElementById('l_destprev'); if(!box) return; const arr=getDest();
+  box.innerHTML=arr.map((d,i)=>`<span class="chip2">${escH(d)} <a href="#" onclick="destRemove(${i});return false" title="Fjern" style="color:var(--mut);text-decoration:none;font-weight:700">×</a></span>`).join(''); }
+function destPick(val){ const p=document.getElementById('l_dest_pick'), wrap=document.getElementById('l_dest_other_wrap');
+  if(val==='__other__'){ if(wrap) wrap.style.display='block'; if(p) p.value=''; return; }
+  if(!val) return; const arr=getDest(); if(!arr.includes(val)) arr.push(val); setDest(arr); if(p) p.value=''; if(wrap) wrap.style.display='none'; }
+function destAddOther(){ const inp=document.getElementById('l_dest_other'); if(!inp) return; const val=(inp.value||'').trim(); if(!val) return;
+  const arr=getDest(); if(!arr.includes(val)) arr.push(val); setDest(arr); inp.value=''; const w=document.getElementById('l_dest_other_wrap'); if(w) w.style.display='none'; }
+function destRemove(i){ const arr=getDest(); arr.splice(i,1); setDest(arr); }
+// ── afrejselufthavn (dropdown + "anden") ──
+function airportPick(val){ const other=document.getElementById('l_airport_other'), hid=document.getElementById('l_departure_airport');
+  if(val==='__other__'){ if(other){ other.style.display='block'; other.focus(); if(hid) hid.value=other.value||''; } return; }
+  if(other) other.style.display='none'; if(hid) hid.value=val||''; autoSaveLead(); }
+// ── datoer: hjemrejse = afrejse + 1 uge ──
+function depDateChanged(){ const dep=document.getElementById('l_departure_date').value, ret=document.getElementById('l_return_date');
+  if(dep && ret && (!ret.value || ret.value<=dep)){ const d=new Date(dep); d.setDate(d.getDate()+7); ret.value=d.toISOString().slice(0,10); }
+  autoSaveLead(); }
+// ── børnealdre: én dropdown pr. barn (0–18) ──
+function renderChildAges(){ const kEl=document.getElementById('l_kids'); const box=document.getElementById('l_childages'); if(!box) return;
+  const n=Math.max(0,Math.min(12, parseInt((kEl&&kEl.value)||'0',10)||0));
+  const cur=((document.getElementById('l_child_ages')||{}).value||'').split(/\s*,\s*/).filter(x=>x!=='');
+  if(n===0){ box.innerHTML='<span style="font-size:11.5px;color:var(--mut)">Ingen børn</span>'; const h=document.getElementById('l_child_ages'); if(h) h.value=''; return; }
+  let html='<div style="display:flex;flex-wrap:wrap;gap:6px">';
+  for(let i=0;i<n;i++){ const val=cur[i]!=null?cur[i]:'';
+    html+=`<select data-ci="1" onchange="childAgeChanged()" style="width:auto;min-width:70px">`+
+      ['<option value="">alder</option>'].concat(Array.from({length:19},(_,a)=>`<option ${String(a)===String(val)?'selected':''}>${a}</option>`)).join('')+`</select>`; }
+  html+='</div>'; box.innerHTML=html; childAgeChanged(true); }
+function childAgeChanged(silent){ const box=document.getElementById('l_childages'); if(!box) return;
+  const ages=[...box.querySelectorAll('select')].map(s=>s.value).filter(x=>x!==''); const h=document.getElementById('l_child_ages'); if(h) h.value=ages.join(', ');
+  if(!silent) autoSaveLead(); }
+// ── budget: nordisk tusindtalsadskillelse ──
+function parseKr(s){ if(s==null) return null; const d=String(s).replace(/[^\d]/g,''); return d===''?null:parseInt(d,10); }
+function fmtBudget(){ const el=document.getElementById('l_est_value'); if(!el) return; const n=parseKr(el.value); el.value=(n==null?'':n.toLocaleString('da-DK')); autoSaveLead(); }
+function krFmt(n){ return (n==null||n==='')?'':Number(n).toLocaleString('da-DK'); }
+// opsætning af de dynamiske felter når dialogen åbnes
+function leadFieldsInit(){ renderDestChips(); renderChildAges();
+  const ap=document.getElementById('l_airport_pick'), other=document.getElementById('l_airport_other');
+  if(ap && other && ap.value==='__other__'){ other.style.display='block'; other.value=(document.getElementById('l_departure_airport')||{}).value||''; } }
 const BRANCH_OPTS=[['NO','Maldivia NO'],['MD','Maldivia DK'],['IT','Maldivia IT']];
 const ACT_LABEL={system:'System',internt_notat:'Internt notat',opkald:'Opkald til kunde',besked:'Besked til kunde',email_ind:'E-mail fra kunde',email_ud:'E-mail til kunde'};
 function TEAM_OPTS(cur){ const t=window._TEAM||[]; let o=t.map(([ini,nm])=>`<option value="${escH(ini)}" ${cur===ini?'selected':''}>${escH(nm)}</option>`).join(''); if(cur && !t.some(x=>x[0]===cur)) o=`<option value="${escH(cur)}" selected>${escH(cur)}</option>`+o; if(!cur) o='<option value="">—</option>'+o; return o; }
@@ -2070,6 +2113,7 @@ function editLead(id){
   const dlg = document.createElement('dialog'); dlg.className='lead-dlg ld';
   const branchOpts=BRANCH_OPTS.map(([k,lab])=>`<option value="${k}" ${l.branch===k?'selected':''}>${lab}</option>`).join('');
   const ownerVal=escH(v('owner')||window.ME||'');
+  const apVal=v('departure_airport'); const apInList=AIRPORT_OPTS.includes(apVal);
   dlg.innerHTML = `
     <div class="ld-hd">
       <input class="ld-title" id="l_title" value="${escH(v('title')||v('contact_name'))}" placeholder="Titel">
@@ -2079,8 +2123,6 @@ function editLead(id){
       </div>
     </div>
     <div class="ld-meta">
-      <span class="rot calm" id="l_rot">—</span>
-      <span class="divider"></span>
       <div class="item"><span class="lbl">Ansvarlig</span>
         <select id="l_owner_sel" onchange="document.getElementById('l_owner').value=this.value">${TEAM_OPTS(ownerVal)}</select>
         <input type="hidden" id="l_owner" value="${ownerVal}"></div>
@@ -2102,25 +2144,31 @@ function editLead(id){
       <div class="sh">Detaljer</div>
       <div class="grid3">
         <div class="fbox"><h5>Rejsen</h5>
-          <div class="fld"><div class="k">Destination(er)</div><input id="l_destination" value="${escH(v('destination'))}" oninput="ldDestPrev()"><div class="chips2" id="l_destprev">${destChipsHtml(v('destination'))}</div></div>
-          <div class="fld"><div class="k">Afrejsedato</div><input id="l_departure_date" type="date" value="${v('departure_date')}"></div>
+          <div class="fld"><div class="k">Destination(er)</div>
+            <select id="l_dest_pick" onchange="destPick(this.value)"><option value="">+ Vælg destination…</option>${DEST_OPTS.map(d=>`<option>${escH(d)}</option>`).join('')}<option value="__other__">Anden…</option></select>
+            <div id="l_dest_other_wrap" style="display:none;margin-top:6px"><input id="l_dest_other" placeholder="Skriv destination" onkeydown="if(event.key==='Enter'){event.preventDefault();destAddOther();}"><button type="button" class="b ghost" style="margin-top:5px;padding:5px 11px" onclick="destAddOther()">Tilføj</button></div>
+            <div class="chips2" id="l_destprev" style="margin-top:6px"></div>
+            <input type="hidden" id="l_destination" value="${escH(v('destination'))}"></div>
+          <div class="fld"><div class="k">Afrejsedato</div><input id="l_departure_date" type="date" value="${v('departure_date')}" onchange="depDateChanged()"></div>
           <div class="fld"><div class="k">Hjemrejsedato</div><input id="l_return_date" type="date" value="${v('return_date')}"></div>
-          <div class="fld"><div class="k">Afgangslufthavn</div><input id="l_departure_airport" value="${escH(v('departure_airport'))}"></div>
-          <div class="fld"><div class="k">Nætter</div><input id="l_nights" type="number" value="${v('nights')}"></div>
-          <div class="fld"><div class="k">Villaer/værelser</div><input id="l_villas" type="number" value="${v('villas')}"></div>
+          <div class="fld"><div class="k">Afrejselufthavn</div>
+            <select id="l_airport_pick" onchange="airportPick(this.value)"><option value="">Vælg…</option>${AIRPORT_OPTS.map(a=>`<option ${apVal===a?'selected':''}>${escH(a)}</option>`).join('')}<option value="__other__" ${apVal&&!apInList?'selected':''}>Anden…</option></select>
+            <input id="l_airport_other" placeholder="Skriv lufthavn / kommentar" style="display:none;margin-top:6px" value="${apVal&&!apInList?escH(apVal):''}" oninput="var h=document.getElementById('l_departure_airport');if(h)h.value=this.value" onchange="autoSaveLead()">
+            <input type="hidden" id="l_departure_airport" value="${escH(v('departure_airport'))}"></div>
+          <div class="fld"><div class="k">Nætter</div><input id="l_nights" type="number" min="0" value="${v('nights')}"></div>
+          <div class="fld"><div class="k">Villaer/værelser</div><input id="l_villas" type="number" min="0" value="${v('villas')}"></div>
         </div>
         <div class="fbox"><h5>Rejsende og budget</h5>
-          <div class="fld"><div class="k">Voksne</div><input id="l_adults" type="number" value="${v('adults')}"></div>
-          <div class="fld"><div class="k">Børn</div><input id="l_kids" type="number" value="${v('kids')}"></div>
-          <div class="fld"><div class="k">Alder på børn</div><input id="l_child_ages" value="${escH(v('child_ages'))}" placeholder="fx 8, 11"></div>
-          <div class="fld"><div class="k">Budget</div><input id="l_est_value" type="number" value="${v('est_value')}"></div>
+          <div class="fld"><div class="k">Voksne</div><input id="l_adults" type="number" min="0" value="${v('adults')}"></div>
+          <div class="fld"><div class="k">Børn</div><input id="l_kids" type="number" min="0" max="12" value="${v('kids')}" onchange="renderChildAges()"></div>
+          <div class="fld"><div class="k">Alder på børn</div><div id="l_childages"></div><input type="hidden" id="l_child_ages" value="${escH(v('child_ages'))}"></div>
+          <div class="fld"><div class="k">Budget (${escH(l.currency||'DKK')})</div><input id="l_est_value" inputmode="numeric" value="${krFmt(l.est_value)}" onblur="fmtBudget()"></div>
           <div class="fld"><div class="k">Valuta</div><select id="l_currency"><option ${l.currency==='DKK'||!l.currency?'selected':''}>DKK</option><option ${l.currency==='NOK'?'selected':''}>NOK</option><option ${l.currency==='EUR'?'selected':''}>EUR</option></select></div>
         </div>
         <div class="fbox"><h5>Kontakt og kilde</h5>
           <div class="fld"><div class="k">Kontaktnavn</div><input id="l_contact_name" value="${escH(v('contact_name'))}"></div>
           <div class="fld"><div class="k">E-mail</div><input id="l_contact_email" value="${escH(v('contact_email'))}"></div>
           <div class="fld"><div class="k">Telefon</div><input id="l_contact_phone" value="${escH(v('contact_phone'))}"></div>
-          <div class="fld"><div class="k">Hvordan kontaktes?</div><input id="l_contact_pref" value="${escH(v('contact_pref'))}"></div>
           <div class="fld"><div class="k">Hvor har du hørt om os?</div><input id="l_heard_about_us" value="${escH(v('heard_about_us'))}"></div>
           <div class="fld"><div class="k">Kanal / kilde</div><input id="l_source" value="${escH(v('source'))}"></div>
         </div>
@@ -2141,9 +2189,12 @@ function editLead(id){
     </div>`;
   document.body.appendChild(dlg); window._leadDlg=dlg; dlg.showModal();
   dlg.addEventListener('click',e=>{ if(e.target===dlg) closeLeadDlg(); });
-  dlg.addEventListener('change',e=>{ if(e.target.matches('input,select,textarea') && e.target.id!=='l_newnote') autoSaveLead(); });
+  dlg.addEventListener('change',e=>{ const t=e.target; if(!t.matches('input,select,textarea')) return;
+    if(['l_newnote','l_dest_pick','l_dest_other','l_airport_pick','l_airport_other'].includes(t.id)) return;
+    if(t.hasAttribute('data-ci')) return; autoSaveLead(); });
   renderStageBar(l, []);
   renderDublet(l);
+  leadFieldsInit();
   if(id) refreshLeadActs(id, l);
 }
 function ldDestPrev(){ const el=document.getElementById('l_destination'), p=document.getElementById('l_destprev'); if(el&&p) p.innerHTML=destChipsHtml(el.value); }
@@ -2175,7 +2226,6 @@ function renderStageBar(l, acts){
   }).join('');
   const total=daysSince(l.created_at); const rott=daysSince(enteredCurrentAt);
   const sm=document.getElementById('l_smeta'); if(sm) sm.innerHTML=`<span>Klik et trin for at flytte henvendelsen</span><span><b>${dagOrd(total)}</b> i alt · <b>${dagOrd(rott)}</b> på nuværende trin</span>`;
-  const rotEl=document.getElementById('l_rot'); if(rotEl){ rotEl.textContent='Rådner: '+dagOrd(rott); rotEl.className='rot'+((rott||0)<3?' calm':''); }
 }
 async function refreshLeadActs(id, l){
   l = l || (window._leads||[]).find(x=>x.id===id) || {id};
@@ -2185,7 +2235,7 @@ async function refreshLeadActs(id, l){
   // interne noter (kun internt_notat), nyeste øverst
   const notes=A.filter(a=>a.type==='internt_notat').sort((a,b)=>new Date(b.occurred_at)-new Date(a.occurred_at));
   const nb=document.getElementById('l_notes');
-  if(nb) nb.innerHTML = notes.length?notes.map(n=>`<li class="n"><div class="h"><b>${escH(n.actor||'—')}</b> · ${fmtDT(n.occurred_at)}<a href="#" title="Slet" onclick="delLeadAct('${n.id}','${id}');return false">✕</a></div><div class="t">${escH(n.body||'').replace(/\n/g,'<br>')}</div></li>`).join('')
+  if(nb) nb.innerHTML = notes.length?notes.map(n=>`<li class="n"><div class="h"><b>${escH(n.actor||'—')}</b> · ${fmtDT(n.occurred_at)}</div><div class="t">${escH(n.body||'').replace(/\n/g,'<br>')}</div></li>`).join('')
     : '<li class="muted" style="font-size:11.5px;color:var(--mut)">Ingen interne noter endnu.</li>';
   // historik: alt undtagen interne noter, nyeste øverst
   const hist=A.filter(a=>a.type!=='internt_notat').sort((a,b)=>new Date(b.occurred_at)-new Date(a.occurred_at));
@@ -2246,10 +2296,10 @@ function leadFormData(){
   const num=id=>{const x=g(id);return x===''?null:(+x);};
   return { title:g('l_title')||g('l_contact_name')||'Henvendelse', stage:g('l_stage'), branch:g('l_branch')||null,
     contact_name:g('l_contact_name')||null, contact_email:g('l_contact_email')||null, contact_phone:g('l_contact_phone')||null,
-    est_value:num('l_est_value'), currency:g('l_currency')||'DKK', destination:g('l_destination')||null,
+    est_value:parseKr(g('l_est_value')), currency:g('l_currency')||'DKK', destination:g('l_destination')||null,
     departure_airport:g('l_departure_airport')||null, adults:num('l_adults'), kids:num('l_kids'), child_ages:g('l_child_ages')||null,
     departure_date:g('l_departure_date')||null, return_date:g('l_return_date')||null,
-    nights:num('l_nights'), villas:num('l_villas'), contact_pref:g('l_contact_pref')||null, owner:g('l_owner')||null,
+    nights:num('l_nights'), villas:num('l_villas'), owner:g('l_owner')||null,
     wishes:g('l_wishes')||null, highlights:g('l_highlights')||null, heard_about_us:g('l_heard_about_us')||null, source:g('l_source')||null };
 }
 async function saveLead(id){
